@@ -1,58 +1,56 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 240 20% 4%;
+    --background: 240 33% 9%;
     --foreground: 0 0% 100%;
 
-    --card: 240 15% 8%;
+    --card: 240 29% 14%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 240 15% 8%;
+    --popover: 240 29% 14%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 263 53% 52%;
+    --primary: 274 66% 46%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 212 71% 57%;
+    --secondary: 275 53% 59%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 10% 14%;
-    --muted-foreground: 214 20% 69%;
+    --muted: 240 15% 18%;
+    --muted-foreground: 210 11% 71%;
 
-    --accent: 189 100% 50%;
-    --accent-foreground: 240 20% 4%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 240 33% 9%;
 
     --destructive: 338 100% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 100% / 0.1;
-    --input: 0 0% 100% / 0.1;
-    --ring: 263 53% 52%;
+    --border: 0 0% 100% / 0.18;
+    --input: 0 0% 100% / 0.18;
+    --ring: 274 66% 46%;
 
     --radius: 0.75rem;
 
-    --cyan: 189 100% 50%;
+    --cyan: 180 100% 50%;
     --pink: 338 100% 50%;
-    --purple: 263 53% 52%;
+    --purple: 274 66% 46%;
     --blue: 212 71% 57%;
 
-    --glass-bg: 0 0% 100% / 0.05;
-    --glass-border: 0 0% 100% / 0.1;
-    --glass-bg-hover: 0 0% 100% / 0.08;
+    --glass-bg: 0 0% 100% / 0.08;
+    --glass-border: 0 0% 100% / 0.18;
+    --glass-bg-hover: 0 0% 100% / 0.12;
 
-    --sidebar-background: 240 15% 8%;
+    --sidebar-background: 240 29% 14%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 263 53% 52%;
+    --sidebar-primary: 274 66% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 189 100% 50%;
-    --sidebar-accent-foreground: 240 20% 4%;
-    --sidebar-border: 0 0% 100% / 0.1;
-    --sidebar-ring: 263 53% 52%;
+    --sidebar-accent: 180 100% 50%;
+    --sidebar-accent-foreground: 240 33% 9%;
+    --sidebar-border: 0 0% 100% / 0.18;
+    --sidebar-ring: 274 66% 46%;
   }
 }
 
@@ -61,22 +59,62 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
+    @apply font-heading tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl md:text-6xl lg:text-7xl font-black leading-[1.05];
+    letter-spacing: -0.04em;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight;
+    letter-spacing: -0.03em;
+  }
+
+  p {
+    @apply leading-relaxed;
+    line-height: 1.7;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--accent)));
+    border-radius: 10px;
+    border: 2px solid hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, hsl(var(--secondary)), hsl(var(--accent)));
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-glass border border-glass-border backdrop-blur-xl;
+    @apply bg-glass border border-glass-border backdrop-blur-2xl;
   }
 
   .glass-hover {
-    @apply glass transition-all duration-300 hover:bg-glass-hover hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5 hover:-translate-y-1;
+    @apply glass transition-all duration-400 hover:bg-glass-hover hover:border-white/25 hover:shadow-xl hover:shadow-accent/10 hover:-translate-y-2;
   }
 
   .gradient-text {
@@ -95,8 +133,9 @@
     @apply relative overflow-hidden px-8 py-4 rounded-xl font-heading font-bold text-lg
            bg-gradient-to-r from-destructive via-primary to-secondary
            text-primary-foreground shadow-[0_0_30px_hsl(var(--destructive)/0.4)]
-           transition-all duration-300
-           hover:-translate-y-0.5 hover:shadow-[0_0_50px_hsl(var(--destructive)/0.6)];
+           transition-all duration-400
+           hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_8px_48px_hsl(var(--destructive)/0.5)];
+    letter-spacing: -0.01em;
   }
 
   .btn-primary::after {
@@ -110,30 +149,66 @@
   }
 
   .number-badge {
-    @apply w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary
-           flex items-center justify-center text-sm font-bold text-primary-foreground;
+    @apply w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary
+           flex items-center justify-center text-sm font-bold text-primary-foreground
+           relative;
+  }
+
+  .number-badge::after {
+    content: '';
+    @apply absolute inset-[-3px] rounded-full
+           bg-gradient-to-br from-accent to-primary
+           -z-10 opacity-0 transition-opacity duration-300;
+  }
+
+  .glass-hover:hover .number-badge::after {
+    @apply opacity-60;
+    animation: rotate 3s linear infinite;
   }
 
   .section-padding {
-    @apply py-20 md:py-32 px-4;
+    @apply py-24 md:py-36 px-4;
+  }
+
+  .prediction-card {
+    @apply p-8 md:p-10;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
 @layer utilities {
-  .bg-animated-gradient {
-    background: 
-      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(var(--primary) / 0.15) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 60% at 80% 60%, hsl(var(--secondary) / 0.1) 0%, transparent 70%),
-      radial-gradient(ellipse 50% 50% at 50% 20%, hsl(var(--cyan) / 0.08) 0%, transparent 70%),
-      hsl(var(--background));
-    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-    animation: gradient-shift 20s ease infinite;
+  .duration-400 {
+    transition-duration: 400ms;
   }
 
-  @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%, 100% 50%, 50% 0%, 0% 0%; }
-    33% { background-position: 100% 0%, 0% 100%, 0% 100%, 0% 0%; }
-    66% { background-position: 50% 100%, 50% 0%, 100% 50%, 0% 0%; }
+  .transition-smooth {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bg-animated-gradient {
+    background: 
+      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(var(--primary) / 0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 60% at 80% 60%, hsl(var(--secondary) / 0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 50% 20%, hsl(var(--cyan) / 0.1) 0%, transparent 70%),
+      hsl(var(--background));
+    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: etherealFloat 25s ease-in-out infinite;
+  }
+
+  @keyframes etherealFloat {
+    0%, 100% { 
+      background-position: 0% 50%, 100% 50%, 50% 0%, 0% 0%;
+      transform: scale(1);
+    }
+    33% { 
+      background-position: 100% 0%, 0% 100%, 0% 100%, 0% 0%;
+    }
+    66% { 
+      background-position: 50% 100%, 50% 0%, 100% 50%, 0% 0%;
+    }
   }
 
   @keyframes shimmer {
@@ -168,6 +243,43 @@
   }
 
   .animate-progress {
-    animation: progress-fill 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: progress-fill 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .animate-icon-pulse {
+    animation: iconPulse 3s ease-in-out infinite;
+  }
+
+  /* Upload zone enhancements */
+  .upload-zone {
+    @apply transition-all duration-400;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .upload-zone:hover {
+    @apply scale-[1.01];
+  }
+
+  .upload-zone.drag-over {
+    @apply scale-[1.03] shadow-[0_8px_32px_hsl(var(--accent)/0.3)];
+  }
+
+  /* Progress bar enhancement */
+  .progress-bar-container {
+    @apply h-3.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.3)];
+  }
+
+  .progress-bar-fill {
+    @apply shadow-[0_0_20px_hsl(var(--accent)/0.5)];
+    transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }

@@ -80,29 +80,37 @@ const UploadSection = forwardRef<HTMLElement, Props>(
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             {!selectedFile ? (
               <div
+                role="button"
+                tabIndex={0}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onDrop}
                 onClick={() => inputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300
-                  ${dragOver ? "border-accent scale-[1.02] bg-accent/5" : "border-glass-border hover:border-muted-foreground"}`}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click(); }}
+                className={`upload-zone border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer
+                  ${dragOver ? "drag-over border-accent bg-accent/5" : "border-glass-border hover:border-muted-foreground"}`}
               >
                 <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={onChange} />
                 <span className="text-5xl block mb-4">📁</span>
                 <p className="font-heading font-bold text-lg mb-1">Drop Your Resume Here</p>
                 <p className="text-muted-foreground text-sm mb-4">or click to browse (PDF only, max 5MB)</p>
-                <span className="inline-block glass rounded-lg px-4 py-2 text-sm text-muted-foreground">Choose File</span>
+                <span 
+                  className="inline-block glass rounded-lg px-4 py-2 text-sm text-muted-foreground hover:bg-glass-hover transition-all duration-400"
+                  onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+                >
+                  Choose File
+                </span>
               </div>
             ) : (
-              <div className="glass rounded-2xl p-6 border border-accent/30">
-                <div className="flex items-center justify-between mb-4">
+              <div className="glass rounded-2xl p-8 border border-accent/30">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="font-bold text-sm">{selectedFile.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatSize(selectedFile.size)}</p>
+                    <p className="font-bold text-sm font-mono">{selectedFile.name}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{formatSize(selectedFile.size)}</p>
                   </div>
                   <button
                     onClick={() => onFileSelect(null)}
-                    className="w-8 h-8 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                    className="w-9 h-9 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-destructive hover:rotate-90 transition-all duration-400"
                   >
                     ×
                   </button>
