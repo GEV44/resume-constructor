@@ -12,39 +12,39 @@ const ResultsModal = ({ result, onClose }: Props) => {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-lg"
+        className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-background/80 backdrop-blur-lg"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          className="glass rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+          className="glass rounded-3xl p-8 md:p-10 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 40, scale: 0.95 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full glass flex items-center justify-center
-                       text-muted-foreground hover:text-destructive hover:rotate-90 transition-all duration-300"
+            className="absolute top-4 right-4 z-[1002] w-10 h-10 rounded-full glass flex items-center justify-center
+                       text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:rotate-90 transition-all duration-400"
           >
             ×
           </button>
 
           {/* Score */}
-          <div className="text-center mb-6">
-            <p className="text-muted-foreground text-sm mb-2">Your Offer Probability</p>
-            <p className="font-heading font-extrabold text-6xl md:text-7xl gradient-text">{result.score}%</p>
-            <div className="relative h-3 bg-muted rounded-full overflow-hidden my-4">
+          <div className="text-center mb-8">
+            <p className="text-muted-foreground text-sm mb-3">Your Offer Probability</p>
+            <p className="font-heading font-black text-6xl md:text-7xl gradient-text tracking-tight">{result.score}%</p>
+            <div className="progress-bar-container relative bg-muted rounded-full overflow-hidden my-5">
               <motion.div
-                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-destructive via-primary to-accent"
+                className="progress-bar-fill absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-destructive via-primary to-accent"
                 initial={{ width: 0 }}
                 animate={{ width: `${result.score}%` }}
-                transition={{ duration: 2, ease: [0.4, 0, 0.2, 1] }}
+                transition={{ duration: 2.5, ease: [0.4, 0, 0.2, 1] }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
               </motion.div>

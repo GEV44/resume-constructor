@@ -35,7 +35,7 @@ const Index = () => {
     setTimeout(() => {
       setIsLoading(false);
       setResult(generateResults(selectedRole));
-    }, 4500);
+    }, 5000);
   }, [selectedFile, selectedRole]);
 
   return (
