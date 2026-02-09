@@ -14,7 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analyses: {
+        Row: {
+          created_at: string
+          education_score: number
+          experience_score: number
+          grade: string
+          id: string
+          impact_score: number
+          job_role: string
+          missing_skills: Json
+          overall_score: number
+          project_score: number
+          recommendations: Json
+          resume_id: string
+          skill_score: number
+          strengths: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          education_score?: number
+          experience_score?: number
+          grade?: string
+          id?: string
+          impact_score?: number
+          job_role: string
+          missing_skills?: Json
+          overall_score?: number
+          project_score?: number
+          recommendations?: Json
+          resume_id: string
+          skill_score?: number
+          strengths?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          education_score?: number
+          experience_score?: number
+          grade?: string
+          id?: string
+          impact_score?: number
+          job_role?: string
+          missing_skills?: Json
+          overall_score?: number
+          project_score?: number
+          recommendations?: Json
+          resume_id?: string
+          skill_score?: number
+          strengths?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analyses_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      optimized_resumes: {
+        Row: {
+          after_score: number
+          analysis_id: string
+          before_score: number
+          created_at: string
+          id: string
+          improvement_percentage: number
+          job_role: string
+          optimized_text: string
+          resume_id: string
+          user_id: string
+        }
+        Insert: {
+          after_score?: number
+          analysis_id: string
+          before_score?: number
+          created_at?: string
+          id?: string
+          improvement_percentage?: number
+          job_role: string
+          optimized_text?: string
+          resume_id: string
+          user_id: string
+        }
+        Update: {
+          after_score?: number
+          analysis_id?: string
+          before_score?: number
+          created_at?: string
+          id?: string
+          improvement_percentage?: number
+          job_role?: string
+          optimized_text?: string
+          resume_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "optimized_resumes_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "optimized_resumes_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      resumes: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string | null
+          id: string
+          original_text: string
+          parsed_json: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path?: string | null
+          id?: string
+          original_text?: string
+          parsed_json?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string | null
+          id?: string
+          original_text?: string
+          parsed_json?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
