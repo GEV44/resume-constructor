@@ -43,7 +43,7 @@ export default function AnalysisResult() {
 
       if (!resume) throw new Error("Resume not found");
 
-      const { data, error } = await supabase.functions.invoke("optimize-resume", {
+      const response = await supabase.functions.invoke("optimize-resume", {
         body: {
           resumeText: resume.original_text,
           parsed: resume.parsed_json,
@@ -56,7 +56,18 @@ export default function AnalysisResult() {
         },
       });
 
-      if (error) throw error;
+      if (response.error) {
+        const errMsg = typeof response.error === 'object' && response.error.message
+          ? response.error.message
+          : String(response.error);
+        throw new Error(errMsg);
+      }
+
+      const data = response.data;
+      if (!data || data.error) {
+        throw new Error(data?.error || "Optimization failed.");
+      }
+
       toast.success(`Optimized! Score improved from ${data.before_score}% to ${data.after_score}%`);
       navigate(`/dashboard/optimizations`);
     } catch (err: any) {

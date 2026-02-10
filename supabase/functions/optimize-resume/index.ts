@@ -26,6 +26,11 @@ serve(async (req) => {
 
     const { resumeText, parsed, jobRoleId, analysisId, resumeId, currentScore, missingSkills, recommendations } = await req.json();
 
+    // Build a structured prompt that preserves parsed data structure
+    const experienceSummary = (parsed?.experience || [])
+      .map((e: any) => `${e.role} at ${e.company} (${e.duration}): ${(e.responsibilities || []).join("; ")}`)
+      .join("\n");
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
