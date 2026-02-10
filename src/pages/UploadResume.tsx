@@ -42,13 +42,29 @@ export default function UploadResume() {
 
       // Step 2: Parse with AI
       setStep("Parsing resume with AI...");
-      const { data: parseData, error: parseError } = await supabase.functions.invoke("parse-resume", {
+      const parseResponse = await supabase.functions.invoke("parse-resume", {
         body: { filePath, fileName: file.name },
       });
-      if (parseError) throw new Error("Parse failed: " + parseError.message);
+      
+      // Handle edge function errors properly
+      if (parseResponse.error) {
+        const errMsg = typeof parseResponse.error === 'object' && parseResponse.error.message 
+          ? parseResponse.error.message 
+          : String(parseResponse.error);
+        throw new Error("Parse failed: " + errMsg);
+      }
+      
+      const parseData = parseResponse.data;
+      if (!parseData || parseData.error) {
+        throw new Error(parseData?.error || "Failed to parse resume. Please try a different file.");
+      }
 
       const parsedResume = parseData.parsed;
-      const originalText = parseData.text;
+      const originalText = parseData.text || "";
+
+      if (!parsedResume) {
+        throw new Error("Could not extract data from resume. Please try a different file format.");
+      }
 
       // Step 3: Save resume to DB
       setStep("Saving resume...");
@@ -67,15 +83,26 @@ export default function UploadResume() {
 
       // Step 4: Score
       setStep("Calculating score...");
-      const { data: scoreData, error: scoreError } = await supabase.functions.invoke("score-resume", {
+      const scoreResponse = await supabase.functions.invoke("score-resume", {
         body: { parsed: parsedResume, jobRoleId: jobRole, resumeText: originalText, resumeId: resumeRow.id },
       });
-      if (scoreError) throw new Error("Scoring failed: " + scoreError.message);
+
+      if (scoreResponse.error) {
+        const errMsg = typeof scoreResponse.error === 'object' && scoreResponse.error.message 
+          ? scoreResponse.error.message 
+          : String(scoreResponse.error);
+        throw new Error("Scoring failed: " + errMsg);
+      }
+
+      const scoreData = scoreResponse.data;
+      if (!scoreData || scoreData.error) {
+        throw new Error(scoreData?.error || "Failed to score resume.");
+      }
 
       toast.success(`Analysis complete! Score: ${scoreData.overall_score}%`);
       navigate(`/dashboard/analysis/${scoreData.analysisId}`);
     } catch (err: any) {
-      console.error(err);
+      console.error("Resume analysis error:", err);
       toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);

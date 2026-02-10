@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,31 +19,18 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Download the file
+    // Download the file from storage
     const { data: fileData, error: downloadError } = await supabase.storage.from("resumes").download(filePath);
     if (downloadError) throw new Error("Failed to download file: " + downloadError.message);
 
-    // Convert to text - for now we'll send the raw content to AI for parsing
     const arrayBuffer = await fileData.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
-    
-    // Try to extract text (basic approach - works for text-based PDFs)
-    let rawText = "";
-    try {
-      rawText = new TextDecoder("utf-8", { fatal: false }).decode(uint8);
-      // If it's a PDF, extract readable text portions
-      if (fileName.toLowerCase().endsWith(".pdf")) {
-        const textParts = rawText.match(/\(([^)]+)\)/g)?.map(s => s.slice(1, -1)) || [];
-        rawText = textParts.join(" ").replace(/\\n/g, "\n").replace(/\\\(/g, "(").replace(/\\\)/g, ")");
-        if (rawText.length < 50) {
-          rawText = "Resume file: " + fileName + ". Unable to fully extract text from this PDF. Please provide a text-based PDF for best results.";
-        }
-      }
-    } catch {
-      rawText = "Resume file: " + fileName;
-    }
+    const b64 = base64Encode(uint8);
 
-    // Use AI to parse the resume into structured JSON
+    const isPdf = fileName.toLowerCase().endsWith(".pdf");
+    const mimeType = isPdf ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+    // Send the file as base64 to Gemini for multimodal parsing
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -54,7 +42,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a resume parser. Extract structured data from resume text. Return ONLY valid JSON with this exact structure:
+            content: `You are a resume parser. Extract structured data from the resume document. Return ONLY valid JSON with this exact structure:
 {
   "contact": {"name": "", "email": "", "phone": ""},
   "education": [{"degree": "", "institution": "", "year": "", "field": ""}],
@@ -68,7 +56,18 @@ serve(async (req) => {
 }
 Sort skills and tools alphabetically. Extract quantified metrics (numbers, percentages, dollar amounts). Calculate total years from experience entries. If data is missing, use empty arrays/strings.`
           },
-          { role: "user", content: `Parse this resume:\n\n${rawText.substring(0, 8000)}` }
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Parse this resume document and extract all structured information:" },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${b64}`
+                }
+              }
+            ]
+          }
         ],
         tools: [{
           type: "function",
@@ -130,9 +129,10 @@ Sort skills and tools alphabetically. Extract quantified metrics (numbers, perce
                 },
                 certifications: { type: "array", items: { type: "string" } },
                 total_years_experience: { type: "number" },
-                quantified_metrics: { type: "array", items: { type: "string" } }
+                quantified_metrics: { type: "array", items: { type: "string" } },
+                extracted_text: { type: "string", description: "The full plain text extracted from the resume" }
               },
-              required: ["contact", "education", "skills", "tools", "experience", "projects", "certifications", "total_years_experience", "quantified_metrics"]
+              required: ["contact", "education", "skills", "tools", "experience", "projects", "certifications", "total_years_experience", "quantified_metrics", "extracted_text"]
             }
           }
         }],
@@ -142,6 +142,8 @@ Sort skills and tools alphabetically. Extract quantified metrics (numbers, perce
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
+      const body = await aiResponse.text();
+      console.error("AI response error:", status, body);
       if (status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -152,29 +154,49 @@ Sort skills and tools alphabetically. Extract quantified metrics (numbers, perce
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
-      throw new Error("AI parsing failed");
+      throw new Error("AI parsing failed: " + body.substring(0, 200));
     }
 
     const aiData = await aiResponse.json();
     let parsed;
-    
+    let extractedText = "";
+
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall) {
       parsed = JSON.parse(toolCall.function.arguments);
+      extractedText = parsed.extracted_text || "";
+      delete parsed.extracted_text;
     } else {
       // Fallback: try to extract JSON from content
       const content = aiData.choices?.[0]?.message?.content || "";
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+        extractedText = parsed.extracted_text || content;
+        delete parsed.extracted_text;
+      }
     }
 
     if (!parsed) throw new Error("Failed to parse resume content");
 
-    // Sort skills and tools alphabetically
+    // Sort skills and tools alphabetically for determinism
     if (parsed.skills) parsed.skills.sort();
     if (parsed.tools) parsed.tools.sort();
 
-    return new Response(JSON.stringify({ parsed, text: rawText.substring(0, 10000) }), {
+    // If we didn't get extracted text, create a summary from parsed data
+    if (!extractedText) {
+      const parts = [];
+      if (parsed.contact?.name) parts.push(parsed.contact.name);
+      if (parsed.skills?.length) parts.push("Skills: " + parsed.skills.join(", "));
+      if (parsed.experience?.length) {
+        parts.push(parsed.experience.map((e: any) => `${e.role} at ${e.company} (${e.duration}): ${e.responsibilities.join("; ")}`).join("\n"));
+      }
+      extractedText = parts.join("\n\n");
+    }
+
+    console.log("Parse successful:", { skills: parsed.skills?.length, experience: parsed.experience?.length });
+
+    return new Response(JSON.stringify({ parsed, text: extractedText }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (e) {
