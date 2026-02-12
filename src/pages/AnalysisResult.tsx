@@ -30,11 +30,14 @@ export default function AnalysisResult() {
       });
   }, [id, user]);
 
+  const [optimizeStep, setOptimizeStep] = useState("");
+
   const handleOptimize = async () => {
     if (!analysis || !user) return;
     setOptimizing(true);
 
     try {
+      setOptimizeStep("Loading resume data...");
       const { data: resume } = await supabase
         .from("resumes")
         .select("original_text, parsed_json")
@@ -43,6 +46,7 @@ export default function AnalysisResult() {
 
       if (!resume) throw new Error("Resume not found");
 
+      setOptimizeStep("Optimizing with AI...");
       const response = await supabase.functions.invoke("optimize-resume", {
         body: {
           resumeText: resume.original_text,
@@ -65,15 +69,21 @@ export default function AnalysisResult() {
 
       const data = response.data;
       if (!data || data.error) {
-        throw new Error(data?.error || "Optimization failed.");
+        throw new Error(data?.error || "Optimization failed. Please try again.");
       }
+
+      setOptimizeStep("Generating PDF...");
+      // Small delay to show PDF step
+      await new Promise(r => setTimeout(r, 500));
 
       toast.success(`Optimized! Score improved from ${data.before_score}% to ${data.after_score}%`);
       navigate(`/dashboard/optimizations`);
     } catch (err: any) {
-      toast.error(err.message || "Optimization failed.");
+      console.error("Optimization error:", err);
+      toast.error(err.message || "Optimization failed. Please try again.");
     } finally {
       setOptimizing(false);
+      setOptimizeStep("");
     }
   };
 
@@ -175,9 +185,9 @@ export default function AnalysisResult() {
         </div>
 
         {/* Optimize CTA */}
-        <button onClick={handleOptimize} disabled={optimizing} className="btn-primary w-full text-center flex items-center justify-center gap-2 disabled:opacity-50">
+        <button onClick={handleOptimize} disabled={optimizing} className="btn-primary w-full text-center flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
           {optimizing ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Optimizing with AI...</>
+            <><Loader2 className="w-4 h-4 animate-spin" /> {optimizeStep || "Optimizing..."}</>
           ) : (
             <><Sparkles className="w-4 h-4" /> Optimize My Resume with AI</>
           )}
