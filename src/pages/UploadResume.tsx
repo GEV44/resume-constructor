@@ -178,7 +178,12 @@ export default function UploadResume() {
 
       updateStep(3, "done");
       toast.success(`Analysis complete! Score: ${scoreData.overall_score}%`);
-      navigate(`/dashboard/analysis/${scoreData.analysisId}`);
+      navigate(`/dashboard/analysis/${scoreData.analysisId}`, {
+        state: {
+          problems: scoreData.problems || [],
+          structure_issues: scoreData.structure_issues || [],
+        },
+      });
     } catch (err: any) {
       console.error("Resume analysis error:", err);
       toast.error(err.message || "Something went wrong. Please try again.");

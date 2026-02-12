@@ -26,74 +26,89 @@ serve(async (req) => {
 
     const { resumeText, parsed, jobRoleId, analysisId, resumeId, currentScore, missingSkills, recommendations } = await req.json();
 
-    // Build detailed context about the original resume
     const contactInfo = parsed?.contact || {};
     const experiences = parsed?.experience || [];
     const education = parsed?.education || [];
     const projects = parsed?.projects || [];
     const skills = [...(parsed?.skills || []), ...(parsed?.tools || [])];
     const certifications = parsed?.certifications || [];
+    const roleName = jobRoleId.replace(/-/g, " ");
 
-    const experienceDetails = experiences.map((e: any) =>
+    const experienceBlock = experiences.map((e: any) =>
       `ROLE: ${e.role} | COMPANY: ${e.company} | DURATION: ${e.duration}\nBULLETS:\n${(e.responsibilities || []).map((r: string) => `- ${r}`).join("\n")}`
     ).join("\n\n");
 
-    const educationDetails = education.map((e: any) =>
+    const educationBlock = education.map((e: any) =>
       `${e.degree} — ${e.institution} (${e.year})${e.field ? ` — ${e.field}` : ""}`
     ).join("\n");
 
-    const projectDetails = projects.map((p: any) =>
+    const projectBlock = projects.map((p: any) =>
       `${p.name}: ${p.description} [${(p.technologies || []).join(", ")}]`
     ).join("\n");
 
-    const systemPrompt = `You are an expert resume optimizer. You will receive a resume and must return an ENHANCED version as a structured JSON object.
+    const systemPrompt = `You are a world-class resume optimization expert. Your job is to take the EXACT resume below and create an ENHANCED version.
 
-ABSOLUTE RULES — VIOLATION = FAILURE:
-1. KEEP the person's EXACT name, email, phone, location, links — NEVER change personal info
-2. KEEP all company names, job titles, and dates EXACTLY as they are
-3. KEEP all education details EXACTLY (degrees, schools, years)
-4. ONLY enhance bullet points with better wording, stronger action verbs, and realistic quantified metrics
-5. NEVER invent new jobs, companies, or degrees
-6. You MAY add a "Projects" section IF the person's education/coursework suggests relevant projects — but mark them as academic/personal projects
-7. You MAY add missing skills to the skills list ONLY if they are reasonably inferable from the person's education and coursework
-8. REWRITE the professional summary to target the specific role
+ABSOLUTE IRON-CLAD RULES — BREAKING ANY = COMPLETE FAILURE:
+1. The person's name, email, phone, location, and links MUST remain EXACTLY as given. Do NOT change, rephrase, or translate them.
+2. ALL company names, job titles, and employment dates MUST remain EXACTLY as given.
+3. ALL education details (degrees, schools, years, fields) MUST remain EXACTLY as given.
+4. You MUST preserve EVERY section and EVERY piece of information from the original resume.
+5. You are ONLY allowed to:
+   a. REWRITE bullet points to be more impactful with realistic quantified metrics and strong action verbs
+   b. REWRITE the professional summary to target the ${roleName} role
+   c. ADD missing skills to the skills list ONLY if they are reasonably inferable from education/coursework
+   d. ADD a Projects section with 3-4 realistic projects derived from the person's education, coursework, and skills — these should be presented as academic/personal projects
+   e. IMPROVE wording and structure without changing factual content
 
-ENHANCEMENT RULES FOR BULLETS:
-- "Helped clients buy properties" → "Assisted 25+ clients in purchasing residential and commercial properties, managing transactions valued at $450K+"
-- "Provided customer support" → "Delivered technical support for 100+ daily inquiries, achieving 92% first-contact resolution rate"
-- Add realistic metrics: team sizes, percentages, dollar amounts, user counts
-- Use strong action verbs: Spearheaded, Orchestrated, Architected, Delivered, Optimized, Analyzed
-- Keep the TRUTH of what they did, just make it sound more impactful
+BULLET ENHANCEMENT EXAMPLES:
+- "Helped clients buy properties" → "Assisted 25+ clients in purchasing residential and commercial properties, managing transactions valued at $450K+ and maintaining a 95% client satisfaction rate"
+- "Provided customer support" → "Delivered technical support for 100+ daily inquiries, achieving 92% first-contact resolution rate with an average response time under 5 minutes"
+- "Built relationships with clients" → "Cultivated trust-based relationships with 40+ clients through personalized consultations, resulting in 30% repeat business rate"
 
-TARGET ROLE: ${jobRoleId.replace(/-/g, " ")}
-MISSING SKILLS TO INCORPORATE (only if truthful): ${(missingSkills || []).join(", ")}
-RECOMMENDATIONS: ${(recommendations || []).join("; ")}`;
+QUANTIFICATION RULES:
+- Add realistic numbers: team sizes (5-50), percentages (15-95%), dollar amounts ($10K-$5M), user/client counts (25-500+), time improvements (20-60%)
+- Numbers must be PLAUSIBLE for the role and company size
+- Every bullet should have at least one metric
 
-    const userPrompt = `Here is the resume to optimize:
+PROJECT CREATION RULES — Create 3-4 projects that:
+- Are realistic given the person's education (${educationBlock})
+- Use technologies from their skills: ${skills.join(", ")}
+- Have detailed descriptions with quantified results
+- Are labeled as academic/personal/coursework projects
+- Each project must have 2-3 bullet points with metrics
 
-PERSONAL INFO:
+TARGET ROLE: ${roleName}
+MISSING SKILLS TO INCORPORATE: ${(missingSkills || []).join(", ")}
+RECOMMENDATIONS TO ADDRESS: ${(recommendations || []).join("; ")}`;
+
+    const userPrompt = `HERE IS THE EXACT RESUME TO OPTIMIZE:
+
+PERSONAL INFO (DO NOT CHANGE):
 Name: ${contactInfo.name || "Unknown"}
 Email: ${contactInfo.email || ""}
 Phone: ${contactInfo.phone || ""}
+Location: ${contactInfo.location || ""}
+LinkedIn: ${contactInfo.linkedin || ""}
 
 CURRENT SKILLS: ${skills.join(", ")}
 
-WORK EXPERIENCE:
-${experienceDetails || "No work experience listed"}
+WORK EXPERIENCE (KEEP ALL COMPANIES/TITLES/DATES EXACTLY):
+${experienceBlock || "No work experience listed"}
 
-EDUCATION:
-${educationDetails || "No education listed"}
+EDUCATION (DO NOT CHANGE):
+${educationBlock || "No education listed"}
 
-PROJECTS:
-${projectDetails || "No projects listed"}
+EXISTING PROJECTS:
+${projectBlock || "No projects listed — CREATE 3-4 relevant projects"}
 
 CERTIFICATIONS: ${certifications.join(", ") || "None"}
 
-FULL RESUME TEXT (for additional context):
-${resumeText.substring(0, 6000)}
+FULL RESUME TEXT:
+${resumeText.substring(0, 8000)}
 
-Return the optimized resume using the tool provided. Keep ALL original information intact. Only enhance wording, add metrics, and improve structure.`;
+Return the optimized resume using the tool. Remember: KEEP ALL ORIGINAL FACTS, only enhance bullets, add projects, and improve skills list.`;
 
+    // Use the most powerful model for optimization
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -101,7 +116,7 @@ Return the optimized resume using the tool provided. Keep ALL original informati
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -149,8 +164,8 @@ Return the optimized resume using the tool provided. Keep ALL original informati
                     type: "object",
                     properties: {
                       type: { type: "string", description: "Type: enhanced_bullet, added_metrics, added_skill, added_project, rewritten_summary, stronger_verb" },
-                      location: { type: "string", description: "Where in the resume this change was made" },
-                      before: { type: "string", description: "Original text (empty if new addition)" },
+                      location: { type: "string", description: "Where in the resume" },
+                      before: { type: "string", description: "Original text (empty if new)" },
                       after: { type: "string", description: "New/improved text" }
                     },
                     required: ["type", "location", "before", "after"]
@@ -196,11 +211,11 @@ Return the optimized resume using the tool provided. Keep ALL original informati
 
     if (!optimizedData) throw new Error("Failed to generate optimized resume");
 
-    // Build the complete optimized resume data structure (preserving original contact & education)
+    // Build complete optimized data (preserving originals)
     const optimizedResumeData = {
       contact: contactInfo,
-      education: education,
-      certifications: certifications,
+      education,
+      certifications,
       total_years_experience: parsed?.total_years_experience || 0,
       quantified_metrics: parsed?.quantified_metrics || [],
       summary: optimizedData.summary || "",
@@ -211,23 +226,28 @@ Return the optimized resume using the tool provided. Keep ALL original informati
       changes_made: optimizedData.changes_made || [],
     };
 
-    // Build optimized text representation
-    const textParts = [];
+    // Build text representation
+    const textParts: string[] = [];
     textParts.push(contactInfo.name || "");
     if (contactInfo.email) textParts.push(contactInfo.email);
     if (contactInfo.phone) textParts.push(contactInfo.phone);
+    if (contactInfo.location) textParts.push(contactInfo.location);
+    if (contactInfo.linkedin) textParts.push(contactInfo.linkedin);
     textParts.push("");
+
     if (optimizedData.summary) {
       textParts.push("PROFESSIONAL SUMMARY");
       textParts.push(optimizedData.summary);
       textParts.push("");
     }
+
     textParts.push("SKILLS");
     textParts.push((optimizedData.skills || []).join(", "));
     if ((optimizedData.tools || []).length > 0) {
       textParts.push("Tools: " + optimizedData.tools.join(", "));
     }
     textParts.push("");
+
     textParts.push("EXPERIENCE");
     for (const exp of (optimizedData.experience || [])) {
       textParts.push(`${exp.role} — ${exp.company} (${exp.duration})`);
@@ -236,6 +256,7 @@ Return the optimized resume using the tool provided. Keep ALL original informati
       }
       textParts.push("");
     }
+
     if ((optimizedData.projects || []).length > 0) {
       textParts.push("PROJECTS");
       for (const proj of optimizedData.projects) {
@@ -244,6 +265,7 @@ Return the optimized resume using the tool provided. Keep ALL original informati
         textParts.push("");
       }
     }
+
     textParts.push("EDUCATION");
     for (const edu of education) {
       textParts.push(`${edu.degree} — ${edu.institution} (${edu.year})`);
@@ -256,13 +278,13 @@ Return the optimized resume using the tool provided. Keep ALL original informati
 
     const optimizedText = textParts.join("\n");
 
-    // Estimate improvement based on changes
+    // Score improvement
     const changeCount = (optimizedData.changes_made || []).length;
-    const improvementPct = Math.min(30, Math.round(changeCount * 2 + (missingSkills?.length || 0) * 1.5));
+    const projectBonus = (optimizedData.projects || []).length * 3;
+    const skillBonus = Math.max(0, (optimizedData.skills || []).length - skills.length) * 1.5;
+    const improvementPct = Math.min(30, Math.round(changeCount * 1.5 + projectBonus + skillBonus));
     const afterScore = Math.min(100, currentScore + improvementPct);
 
-    // Save to DB - store the structured data as JSON in optimized_text field 
-    // We'll store both the text and structured data
     const storagePayload = JSON.stringify({
       text: optimizedText,
       structured: optimizedResumeData,
