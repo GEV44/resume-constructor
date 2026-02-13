@@ -14,6 +14,7 @@ import AnalysisResult from "./pages/AnalysisResult";
 import Analyses from "./pages/Analyses";
 import Optimizations from "./pages/Optimizations";
 import Profile from "./pages/Profile";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/dashboard/analyses" element={<ProtectedRoute><Analyses /></ProtectedRoute>} />
             <Route path="/dashboard/optimizations" element={<ProtectedRoute><Optimizations /></ProtectedRoute>} />
             <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/dashboard/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -21,7 +21,7 @@ export default function Optimizations() {
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [changes, setChanges] = useState<ChangeItem[]>([]);
   const [plainText, setPlainText] = useState("");
-  const [template, setTemplate] = useState<ResumeTemplate>("executive");
+  const [template, setTemplate] = useState<ResumeTemplate>("professional");
   const [showPreview, setShowPreview] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<"changes" | "preview" | "download">("changes");
