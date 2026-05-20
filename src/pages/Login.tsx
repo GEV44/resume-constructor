@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import Seo from "@/components/Seo";
 
 export default function Login() {
   const { user, loading, signIn } = useAuth();
@@ -22,18 +23,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-animated-gradient flex items-center justify-center px-4">
+    <main className="min-h-screen bg-animated-gradient flex items-center justify-center px-4">
+      <Seo
+        title="Log In — AI Resume Builder"
+        description="Sign in to your AI Resume Builder account to access resume analyses, optimizations, and your dashboard."
+        path="/login"
+      />
       <div className="glass rounded-3xl p-8 md:p-10 w-full max-w-md">
         <Link to="/" className="font-heading font-extrabold text-xl gradient-text flex items-center gap-2 mb-8 justify-center">
           <span>📄</span> AI Resume Builder
         </Link>
-        <h2 className="font-heading font-bold text-2xl text-center mb-2">Welcome Back</h2>
+        <h1 className="font-heading font-bold text-2xl text-center mb-2">Welcome Back</h1>
         <p className="text-muted-foreground text-sm text-center mb-8">Sign in to your account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Email</label>
+            <label htmlFor="login-email" className="text-sm text-muted-foreground mb-1 block">Email</label>
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -43,8 +50,9 @@ export default function Login() {
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Password</label>
+            <label htmlFor="login-password" className="text-sm text-muted-foreground mb-1 block">Password</label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -63,6 +71,6 @@ export default function Login() {
           <Link to="/signup" className="text-accent hover:underline">Sign up</Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

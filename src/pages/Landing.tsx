@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FileText, BarChart3, Sparkles, Target, TrendingUp, Shield } from "lucide-react";
+import Seo from "@/components/Seo";
 
 const features = [
   { icon: FileText, title: "Smart Resume Parsing", desc: "Upload PDF or DOCX — our AI extracts and structures your resume data automatically." },
@@ -12,8 +13,29 @@ const features = [
 ];
 
 export default function Landing() {
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "AI Resume Builder",
+      url: "https://skill-fortune-predictor.lovable.app/",
+      description: "AI-powered resume analysis and optimization with deterministic scoring across 30+ job roles.",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "AI Resume Builder",
+      url: "https://skill-fortune-predictor.lovable.app/",
+    },
+  ];
   return (
     <div className="min-h-screen bg-animated-gradient">
+      <Seo
+        title="AI Resume Builder — Score & Optimize Your Resume"
+        description="Upload your resume, get a deterministic ATS score for 30+ job roles, and let AI optimize it without inventing fake experience."
+        path="/"
+        jsonLd={jsonLd}
+      />
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto flex items-center justify-between py-4">
@@ -31,6 +53,7 @@ export default function Landing() {
         </div>
       </nav>
 
+      <main>
       {/* Hero */}
       <section className="pt-36 pb-24 md:pt-48 md:pb-36 px-4">
         <div className="container mx-auto text-center">
@@ -103,6 +126,7 @@ export default function Landing() {
           </motion.div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-glass-border py-12 px-4">

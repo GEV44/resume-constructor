@@ -1,0 +1,13 @@
+# AI Resume Builder
+
+> AI-powered resume analysis and optimization. Upload a resume, get a deterministic score for any of 30+ job roles, and receive AI-improved versions that never invent fake experience.
+
+## Pages
+
+- [Home](/): Product overview, features, and getting started.
+- [Sign Up](/signup): Create a free account to start analyzing resumes.
+- [Log In](/login): Sign in to an existing account.
+
+## Optional
+
+- [Privacy](/): Data is private and row-level secured per user.
