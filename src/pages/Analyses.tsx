@@ -33,6 +33,7 @@ export default function Analyses() {
 
   return (
     <DashboardLayout>
+      <Seo title="Analysis History — AI Resume Builder" description="Browse every resume analysis you've run, with scores, grades, and quick access to detailed results." path="/dashboard/analyses" />
       <div className="max-w-3xl mx-auto">
         <h1 className="font-heading font-bold text-3xl mb-2">Analysis History</h1>
         <p className="text-muted-foreground mb-8">All your past resume analyses.</p>
