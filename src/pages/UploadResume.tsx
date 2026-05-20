@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { JOB_ROLES, JOB_ROLE_CATEGORIES } from "@/lib/job-roles";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -197,6 +198,7 @@ export default function UploadResume() {
 
   return (
     <DashboardLayout>
+      <Seo title="Upload Resume — AI Resume Builder" description="Upload a PDF or DOCX resume, choose a target role, and run a deterministic ATS analysis." path="/dashboard/upload" />
       <div className="max-w-xl mx-auto">
         <h1 className="font-heading font-bold text-3xl mb-2">Upload Resume</h1>
         <p className="text-muted-foreground mb-8">
@@ -205,8 +207,9 @@ export default function UploadResume() {
 
         {/* Role selector */}
         <div className="mb-6">
-          <label className="text-sm text-muted-foreground mb-2 block">Target Job Role</label>
+          <label htmlFor="upload-job-role" className="text-sm text-muted-foreground mb-2 block">Target Job Role</label>
           <select
+            id="upload-job-role"
             value={jobRole}
             onChange={(e) => setJobRole(e.target.value)}
             disabled={loading}
@@ -290,6 +293,7 @@ export default function UploadResume() {
                 {!loading && (
                   <button
                     onClick={() => setFile(null)}
+                    aria-label="Remove selected file"
                     className="p-2 rounded-full glass hover:text-destructive transition-all"
                   >
                     <X className="w-4 h-4" />

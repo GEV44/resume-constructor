@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,7 +59,7 @@ export default function Analyses() {
                       Grade {a.grade}
                     </span>
                   </div>
-                  <button onClick={() => deleteAnalysis(a.id)} className="p-2 text-muted-foreground hover:text-destructive transition-all">
+                  <button onClick={() => deleteAnalysis(a.id)} aria-label="Delete analysis" className="p-2 text-muted-foreground hover:text-destructive transition-all">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
