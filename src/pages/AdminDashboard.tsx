@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { motion } from "framer-motion";
 import {
   Loader2, Users, FileText, BarChart3, Sparkles, TrendingUp,
@@ -112,6 +113,7 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
+      <Seo title="Admin Dashboard — AI Resume Builder" description="Platform-wide analytics, recent uploads, and admin tooling." path="/dashboard/admin" />
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-8">
           <Shield className="w-6 h-6 text-accent" />

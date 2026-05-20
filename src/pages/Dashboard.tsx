@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { Upload, FileText, BarChart3, Sparkles, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
@@ -44,6 +45,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
+      <Seo title="Dashboard — AI Resume Builder" description="Your resume analytics overview: total resumes, analyses, optimizations, and recent results." path="/dashboard" />
       <div className="max-w-5xl mx-auto">
         <h1 className="font-heading font-bold text-3xl mb-1">Welcome back, {profile?.name || "User"}</h1>
         <p className="text-muted-foreground mb-8">Here's your resume analytics overview.</p>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ export default function Analyses() {
 
   return (
     <DashboardLayout>
+      <Seo title="Analysis History — AI Resume Builder" description="Browse every resume analysis you've run, with scores, grades, and quick access to detailed results." path="/dashboard/analyses" />
       <div className="max-w-3xl mx-auto">
         <h1 className="font-heading font-bold text-3xl mb-2">Analysis History</h1>
         <p className="text-muted-foreground mb-8">All your past resume analyses.</p>
@@ -58,7 +60,7 @@ export default function Analyses() {
                       Grade {a.grade}
                     </span>
                   </div>
-                  <button onClick={() => deleteAnalysis(a.id)} className="p-2 text-muted-foreground hover:text-destructive transition-all">
+                  <button onClick={() => deleteAnalysis(a.id)} aria-label="Delete analysis" className="p-2 text-muted-foreground hover:text-destructive transition-all">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>

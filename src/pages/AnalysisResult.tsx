@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -149,6 +150,11 @@ export default function AnalysisResult() {
 
   return (
     <DashboardLayout>
+      <Seo
+        title={`Analysis Results — ${analysis.job_role.replace(/-/g, " ")}`}
+        description={`Resume analysis for ${analysis.job_role.replace(/-/g, " ")}: overall score, grade, problems, and AI-powered optimization suggestions.`}
+        path={`/dashboard/analysis/${analysis.id}`}
+      />
       <div className="max-w-4xl mx-auto">
         <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-all">
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
@@ -156,7 +162,10 @@ export default function AnalysisResult() {
 
         {/* Score header */}
         <div className="glass rounded-3xl p-8 text-center mb-8">
-          <p className="text-muted-foreground text-sm mb-2">Overall Score — {analysis.job_role.replace(/-/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
+          <h1 className="font-heading font-bold text-2xl mb-2">
+            Analysis Results — {analysis.job_role.replace(/-/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+          </h1>
+          <p className="text-muted-foreground text-sm mb-2">Overall Score</p>
           <motion.p
             className="font-heading font-black text-6xl gradient-text"
             initial={{ scale: 0.5, opacity: 0 }}

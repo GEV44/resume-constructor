@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import Seo from "@/components/Seo";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -104,6 +105,7 @@ export default function Optimizations() {
 
   return (
     <DashboardLayout>
+      <Seo title="Optimizations — AI Resume Builder" description="Download AI-optimized versions of your resume in multiple professional templates and review every change made." path="/dashboard/optimizations" />
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="font-heading font-bold text-3xl mb-1">Optimized Resumes</h1>
