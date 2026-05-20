@@ -8,6 +8,7 @@ interface SeoProps {
 }
 
 const SITE_URL = "https://skill-fortune-predictor.lovable.app";
+const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 export default function Seo({ title, description, path, jsonLd }: SeoProps) {
   const url = `${SITE_URL}${path}`;
@@ -20,8 +21,11 @@ export default function Seo({ title, description, path, jsonLd }: SeoProps) {
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
       <meta property="og:type" content="website" />
+      <meta property="og:image" content={OG_IMAGE} />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={OG_IMAGE} />
+      <meta name="twitter:card" content="summary_large_image" />
       {jsonLd && (
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       )}
