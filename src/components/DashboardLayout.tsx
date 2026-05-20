@@ -61,11 +61,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </Link>
         <div className="flex items-center gap-3">
           {navItems.map((item) => (
-            <Link key={item.to} to={item.to} className={`p-2 rounded-lg ${location.pathname === item.to ? "text-accent" : "text-muted-foreground"}`}>
+            <Link key={item.to} to={item.to} aria-label={item.label} className={`p-2 rounded-lg ${location.pathname === item.to ? "text-accent" : "text-muted-foreground"}`}>
               <item.icon className="w-4 h-4" />
             </Link>
           ))}
-          <button onClick={signOut} className="p-2 text-muted-foreground hover:text-destructive">
+          <button onClick={signOut} aria-label="Sign out" className="p-2 text-muted-foreground hover:text-destructive">
             <LogOut className="w-4 h-4" />
           </button>
         </div>
