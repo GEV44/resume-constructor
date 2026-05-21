@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FileText, BarChart3, Sparkles, Target, TrendingUp, Shield } from "lucide-react";
+import {
+  FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
+  Briefcase, GraduationCap, Star, ArrowRight, Zap, User, FileCheck,
+} from "lucide-react";
 import Seo from "@/components/Seo";
 
 const features = [
@@ -55,27 +58,139 @@ export default function Landing() {
 
       <main>
       {/* Hero */}
-      <section className="pt-36 pb-24 md:pt-48 md:pb-36 px-4">
-        <div className="container mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <div className="inline-flex items-center gap-2 glass rounded-full px-5 py-2 text-sm mb-8">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+      <section className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-28 px-4">
+        {/* Ambient glow */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute top-20 -left-20 w-[480px] h-[480px] rounded-full bg-primary/25 blur-[140px]" />
+          <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-accent/25 blur-[160px]" />
+        </div>
+
+        <div className="container mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 items-center">
+          {/* LEFT — copy */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+          >
+            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs mb-7 font-mono uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               AI-Powered Resume Intelligence
             </div>
-            <h1 className="font-heading font-black mb-6">
-              Build Resumes That
+
+            <h1 className="font-heading font-black leading-[0.95] tracking-tight text-5xl md:text-7xl lg:text-[5.5rem] mb-6">
+              AI RESUME
               <br />
-              <span className="gradient-text">Get Noticed</span>
+              BUILDER
             </h1>
-            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-              Upload your resume, get a deterministic score for any job role, and let AI optimize it — all without inventing fake experience.
+
+            <div className="h-1 w-32 rounded-full bg-gradient-to-r from-primary via-accent to-primary mb-6" />
+
+            <p className="text-2xl md:text-3xl font-heading font-semibold mb-3">
+              Build Resumes
             </p>
-            <Link to="/signup" className="btn-primary inline-block mb-4">
-              🚀 Start Analyzing for Free
-            </Link>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-2xl md:text-3xl font-heading font-semibold mb-10">
+              That <span className="gradient-text">Get Noticed</span>
+            </p>
+
+            {/* Feature pills */}
+            <div className="flex flex-wrap gap-3 mb-10">
+              {[
+                { icon: Sparkles, label: "AI-Powered\nWriting" },
+                { icon: FileCheck, label: "ATS-Friendly\nTemplates" },
+                { icon: TrendingUp, label: "Stand Out &\nGet Hired" },
+              ].map((p) => (
+                <div key={p.label} className="glass rounded-full pl-2 pr-4 py-2 flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                    <p.icon className="w-4 h-4 text-white" />
+                  </span>
+                  <span className="text-xs leading-tight whitespace-pre-line">{p.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                to="/signup"
+                className="group inline-flex items-center gap-3 rounded-full px-7 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all"
+              >
+                <Sparkles className="w-4 h-4" />
+                Create Your Resume
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-all">
+                Already have an account?
+              </Link>
+            </div>
+
+            <p className="text-muted-foreground text-xs mt-6 font-mono">
               ✓ No credit card required &nbsp; ✓ 30+ job roles &nbsp; ✓ Deterministic scoring
             </p>
+          </motion.div>
+
+          {/* RIGHT — glass resume mock */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative hidden lg:block"
+          >
+            <div className="absolute -inset-8 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent blur-3xl" />
+
+            {/* Back card */}
+            <div className="absolute top-6 left-6 right-0 bottom-0 glass rounded-3xl border border-white/5 opacity-40" />
+
+            {/* Front card */}
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="relative glass rounded-3xl p-8 border border-white/10 shadow-2xl shadow-primary/20"
+            >
+              {/* Sparkle badge */}
+              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-accent/40">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center gap-4 mb-7 pb-6 border-b border-white/10">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <User className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-2.5 w-32 rounded-full bg-gradient-to-r from-foreground/60 to-foreground/20" />
+                  <div className="h-2 w-24 rounded-full bg-foreground/15" />
+                </div>
+              </div>
+
+              {/* Sections */}
+              {[
+                { icon: Briefcase, label: "EXPERIENCE" },
+                { icon: GraduationCap, label: "EDUCATION" },
+                { icon: Star, label: "SKILLS" },
+              ].map((s) => (
+                <div key={s.label} className="mb-6 last:mb-0">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center">
+                      <s.icon className="w-4 h-4 text-accent" />
+                    </div>
+                    <span className="font-mono text-[11px] font-bold tracking-[0.15em] text-foreground/80">
+                      {s.label}
+                    </span>
+                  </div>
+                  {s.label === "SKILLS" ? (
+                    <div className="flex gap-2 pl-12">
+                      {[14, 18, 12, 16, 14].map((w, i) => (
+                        <div key={i} className={`h-2 rounded-full bg-gradient-to-r from-primary/60 to-accent/60`} style={{ width: `${w * 4}px` }} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="pl-12 space-y-1.5">
+                      <div className="h-1.5 w-full rounded-full bg-foreground/15" />
+                      <div className="h-1.5 w-4/5 rounded-full bg-foreground/10" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </motion.div>
           </motion.div>
         </div>
       </section>
