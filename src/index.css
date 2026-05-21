@@ -190,9 +190,9 @@
 
   .bg-animated-gradient {
     background: 
-      radial-gradient(ellipse 80% 50% at 20% 40%, hsl(var(--primary) / 0.18) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 60% at 80% 60%, hsl(var(--secondary) / 0.12) 0%, transparent 70%),
-      radial-gradient(ellipse 50% 50% at 50% 20%, hsl(var(--cyan) / 0.1) 0%, transparent 70%),
+      radial-gradient(ellipse 80% 60% at 15% 30%, hsl(var(--primary) / 0.28) 0%, transparent 70%),
+      radial-gradient(ellipse 70% 60% at 85% 70%, hsl(var(--accent) / 0.22) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 50% 100%, hsl(var(--secondary) / 0.15) 0%, transparent 70%),
       hsl(var(--background));
     background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
     animation: etherealFloat 25s ease-in-out infinite;
