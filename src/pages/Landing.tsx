@@ -40,16 +40,21 @@ export default function Landing() {
         jsonLd={jsonLd}
       />
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="container mx-auto flex items-center justify-between py-4">
-          <span className="font-heading font-extrabold text-xl gradient-text flex items-center gap-2">
-            <span className="animate-icon-pulse">📄</span> AI Resume Builder
-          </span>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-all duration-400">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
+        <div className="container mx-auto flex items-center justify-between py-3 px-4">
+          <Link to="/" className="flex items-center gap-3">
+            <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center font-heading font-black text-white shadow-lg shadow-primary/40">
+              Ai
+            </span>
+            <span className="font-heading font-extrabold text-lg tracking-wide">
+              AI RESUME BUILDER
+            </span>
+          </Link>
+          <div className="flex items-center gap-5">
+            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-all duration-400 hidden sm:inline">
               Log In
             </Link>
-            <Link to="/signup" className="btn-primary !py-2 !px-5 !text-sm">
+            <Link to="/signup" className="btn-primary !py-2 !px-5 !text-xs !rounded-full">
               Get Started
             </Link>
           </div>
@@ -226,17 +231,46 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
+      {/* Stats strip */}
+      <section className="px-4 pb-8">
+        <div className="container mx-auto glass rounded-2xl px-8 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { value: "30+", label: "Job Roles" },
+            { value: "100%", label: "ATS Friendly" },
+            { value: "0", label: "Hallucinations" },
+            { value: "5s", label: "Avg. Analysis" },
+          ].map((s) => (
+            <div key={s.label}>
+              <p className="font-heading font-black text-2xl md:text-3xl gradient-text">{s.value}</p>
+              <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
       <section className="section-padding">
-        <div className="container mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+        <div className="container mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl glass border border-white/10 p-12 md:p-16 text-center"
+          >
+            <div className="absolute inset-0 -z-10 opacity-60">
+              <div className="absolute -top-20 left-1/3 w-96 h-96 rounded-full bg-primary/30 blur-[120px]" />
+              <div className="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full bg-accent/30 blur-[120px]" />
+            </div>
             <h2 className="font-heading font-extrabold mb-4">
-              Ready to <span className="gradient-text-pink">Stand Out</span>?
+              Ready to <span className="gradient-text">Stand Out</span>?
             </h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              Join thousands of professionals who've improved their resumes with AI-powered insights.
+              Join professionals using AI to land more interviews — no fake experience, just sharper presentation.
             </p>
-            <Link to="/signup" className="btn-primary inline-block">
-              Get Started Now
+            <Link to="/signup" className="btn-primary inline-flex items-center gap-2 !rounded-full">
+              <Sparkles className="w-4 h-4" />
+              Create Your Resume
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
         </div>
