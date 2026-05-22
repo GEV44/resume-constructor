@@ -26,6 +26,26 @@ serve(async (req) => {
 
     const { resumeText, parsed, jobRoleId, analysisId, resumeId, currentScore, missingSkills, recommendations } = await req.json();
 
+    // Verify the caller owns the referenced resume and analysis
+    if (resumeId) {
+      const { data: resumeRow } = await supabase
+        .from("resumes").select("user_id").eq("id", resumeId).maybeSingle();
+      if (!resumeRow || resumeRow.user_id !== user.id) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+    if (analysisId) {
+      const { data: analysisRow } = await supabase
+        .from("analyses").select("user_id").eq("id", analysisId).maybeSingle();
+      if (!analysisRow || analysisRow.user_id !== user.id) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
     const contactInfo = parsed?.contact || {};
     const experiences = parsed?.experience || [];
     const education = parsed?.education || [];

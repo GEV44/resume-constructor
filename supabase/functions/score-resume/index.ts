@@ -70,6 +70,20 @@ serve(async (req) => {
     const role = JOB_ROLES[jobRoleId];
     if (!role) throw new Error("Unknown job role: " + jobRoleId);
 
+    // Verify the caller owns the referenced resume before linking analyses to it
+    if (resumeId) {
+      const { data: resumeRow, error: resumeErr } = await supabase
+        .from("resumes")
+        .select("user_id")
+        .eq("id", resumeId)
+        .maybeSingle();
+      if (resumeErr || !resumeRow || resumeRow.user_id !== user.id) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
     // ===== DETERMINISTIC SCORING =====
     const allSkills = [...(parsed.skills || []), ...(parsed.tools || [])];
     const normalizedSkills = allSkills.map(normalizeSkill);
