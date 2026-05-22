@@ -1,8 +1,5 @@
 project_id = "njijtnlmzvymzlmwvnaz"
 
-[functions.parse-resume]
-verify_jwt = false
-
 [functions.score-resume]
 verify_jwt = false
 
