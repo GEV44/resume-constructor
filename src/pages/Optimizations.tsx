@@ -171,7 +171,7 @@ export default function Optimizations() {
                   {/* Score improvement */}
                   <div className="glass rounded-2xl p-6 border border-accent/20">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-heading font-bold text-lg">Score Improvement</h3>
+                      <h2 className="font-heading font-bold text-lg">Score Improvement</h2>
                       <div className="flex items-center gap-2 text-accent font-heading font-bold text-xl">
                         <TrendingUp className="w-5 h-5" />
                         +{selected.improvement_percentage}%

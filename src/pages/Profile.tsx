@@ -41,7 +41,7 @@ export default function Profile() {
         <p className="text-muted-foreground mb-8">Manage your account details.</p>
 
         <div className="glass rounded-2xl p-6 mb-6">
-          <h3 className="font-heading font-bold mb-4">Account Info</h3>
+          <h2 className="font-heading font-bold mb-4">Account Info</h2>
           <div className="space-y-4">
             <div>
               <label htmlFor="profile-email" className="text-sm text-muted-foreground mb-1 block">Email</label>
@@ -81,7 +81,7 @@ export default function Profile() {
         </div>
 
         <div className="glass rounded-2xl p-6">
-          <h3 className="font-heading font-bold mb-4">Change Password</h3>
+          <h2 className="font-heading font-bold mb-4">Change Password</h2>
           <div className="space-y-4">
             <label htmlFor="profile-new-password" className="text-sm text-muted-foreground mb-1 block">New Password</label>
             <input
