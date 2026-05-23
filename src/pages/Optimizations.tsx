@@ -276,7 +276,7 @@ export default function Optimizations() {
                       {activeTab === "download" && (
                         <div className="space-y-4">
                           <div className="glass rounded-2xl p-5">
-                            <h4 className="font-heading font-bold text-sm mb-3">Choose Template</h4>
+                            <h3 className="font-heading font-bold text-sm mb-3">Choose Template</h3>
                             <div className="grid grid-cols-2 gap-2">
                               {templates.map((t) => (
                                 <button
