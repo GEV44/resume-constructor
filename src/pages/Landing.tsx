@@ -83,9 +83,7 @@ export default function Landing() {
             </div>
 
             <h1 className="font-heading font-black leading-[0.95] tracking-tight text-5xl md:text-7xl lg:text-[5.5rem] mb-6">
-              AI RESUME
-              <br />
-              BUILDER
+              AI Resume Builder — Score & Optimize Your Resume
             </h1>
 
             <div className="h-1 w-32 rounded-full bg-gradient-to-r from-primary via-accent to-primary mb-6" />

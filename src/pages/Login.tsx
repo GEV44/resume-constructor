@@ -33,7 +33,7 @@ export default function Login() {
         <Link to="/" className="font-heading font-extrabold text-xl gradient-text flex items-center gap-2 mb-8 justify-center">
           <span>📄</span> AI Resume Builder
         </Link>
-        <h1 className="font-heading font-bold text-2xl text-center mb-2">Welcome Back</h1>
+        <h1 className="font-heading font-bold text-2xl text-center mb-2">Log In to AI Resume Builder</h1>
         <p className="text-muted-foreground text-sm text-center mb-8">Sign in to your account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
