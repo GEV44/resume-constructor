@@ -12,7 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
-Disallow: /dashboard
-Disallow: /dashboard/
 
 Sitemap: https://skill-fortune-predictor.lovable.app/sitemap.xml
