@@ -1,6 +1,15 @@
 import jsPDF from "jspdf";
 
-export type ResumeTemplate = "professional" | "modern" | "minimal";
+export type ResumeTemplate =
+  | "professional"
+  | "modern"
+  | "minimal"
+  | "executive"
+  | "creative"
+  | "tech"
+  | "elegant"
+  | "bold"
+  | "compact";
 
 export interface ResumeData {
   contact: { name: string; email: string; phone: string; location?: string; linkedin?: string; github?: string; telegram?: string };
