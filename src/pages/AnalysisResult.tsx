@@ -52,6 +52,7 @@ export default function AnalysisResult() {
   const [optimizing, setOptimizing] = useState(false);
   const [optimizeStep, setOptimizeStep] = useState("");
   const [expandedProblems, setExpandedProblems] = useState<Set<number>>(new Set());
+  const [optimizeMode, setOptimizeMode] = useState<"text" | "design" | "both">("both");
 
   // Problems from navigation state (AI-generated)
   const problems: Problem[] = (location.state as any)?.problems || [];
@@ -105,6 +106,7 @@ export default function AnalysisResult() {
           currentScore: analysis.overall_score,
           missingSkills: analysis.missing_skills,
           recommendations: analysis.recommendations,
+          mode: optimizeMode,
         },
       });
 
@@ -326,12 +328,37 @@ export default function AnalysisResult() {
           </ul>
         </div>
 
+        {/* Mode selector */}
+        <div className="glass rounded-2xl p-5 mb-4">
+          <h3 className="font-heading font-bold text-sm mb-3">What should AI optimize?</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { id: "both", label: "Text + Design", desc: "Rewrite content & restyle" },
+              { id: "text", label: "Text Only", desc: "Rewrite bullets, keep layout" },
+              { id: "design", label: "Design Only", desc: "New template, same words" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => setOptimizeMode(opt.id)}
+                className={`rounded-xl p-3 text-left transition-all border ${
+                  optimizeMode === opt.id
+                    ? "border-primary bg-primary/10"
+                    : "border-transparent glass hover:bg-glass-hover"
+                }`}
+              >
+                <p className="font-heading font-bold text-sm">{opt.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Optimize CTA */}
         <button onClick={handleOptimize} disabled={optimizing} className="btn-primary w-full text-center flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
           {optimizing ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> {optimizeStep || "Optimizing..."}</>
           ) : (
-            <><Sparkles className="w-4 h-4" /> Optimize My Resume with AI (Gemini Pro)</>
+            <><Sparkles className="w-4 h-4" /> Optimize My Resume with AI (GPT-5)</>
           )}
         </button>
       </div>

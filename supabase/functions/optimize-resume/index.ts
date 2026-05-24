@@ -24,7 +24,8 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error("Not authenticated");
 
-    const { resumeText, parsed, jobRoleId, analysisId, resumeId, currentScore, missingSkills, recommendations } = await req.json();
+    const { resumeText, parsed, jobRoleId, analysisId, resumeId, currentScore, missingSkills, recommendations, mode } = await req.json();
+    const optimizeMode: "text" | "design" | "both" = (mode === "text" || mode === "design" || mode === "both") ? mode : "both";
 
     // Verify the caller owns the referenced resume and analysis
     if (resumeId) {
@@ -67,35 +68,102 @@ serve(async (req) => {
     ).join("\n");
 
     const hasProjects = existingProjects.length > 0;
-    const maxNewProjects = Math.max(0, 2 - existingProjects.length);
+    const maxNewProjects = optimizeMode === "design" ? 0 : Math.max(0, 3 - existingProjects.length);
 
-    const systemPrompt = `You are a world-class resume optimization expert. Your job is to ENHANCE the resume below while preserving ALL original information.
+    // === DESIGN-ONLY MODE: skip AI, reuse existing parsed data ===
+    if (optimizeMode === "design") {
+      const optimizedResumeData = {
+        contact: contactInfo,
+        education,
+        certifications,
+        total_years_experience: parsed?.total_years_experience || 0,
+        quantified_metrics: parsed?.quantified_metrics || [],
+        languages: parsed?.languages || [],
+        interests: parsed?.interests || [],
+        summary: parsed?.summary || "",
+        experience: experiences,
+        skills: parsed?.skills || [],
+        tools: parsed?.tools || [],
+        projects: existingProjects,
+        changes_made: [{
+          type: "design_refresh",
+          location: "Layout",
+          before: "Original template",
+          after: "Restyled with a modern professional template — content unchanged.",
+        }],
+      };
+
+      const textParts: string[] = [];
+      textParts.push(contactInfo.name || "");
+      if (contactInfo.email) textParts.push(contactInfo.email);
+      if (contactInfo.phone) textParts.push(contactInfo.phone);
+      if (contactInfo.location) textParts.push(contactInfo.location);
+      textParts.push("");
+      textParts.push(resumeText);
+
+      const storagePayload = JSON.stringify({
+        text: textParts.join("\n"),
+        structured: optimizedResumeData,
+      });
+
+      const afterScore = currentScore; // design-only does not improve content score
+      const { error: insertError } = await supabase
+        .from("optimized_resumes")
+        .insert({
+          resume_id: resumeId,
+          analysis_id: analysisId,
+          user_id: user.id,
+          job_role: jobRoleId,
+          optimized_text: storagePayload,
+          improvement_percentage: 0,
+          before_score: currentScore,
+          after_score: afterScore,
+        });
+      if (insertError) throw new Error("Failed to save: " + insertError.message);
+
+      return new Response(JSON.stringify({
+        optimized_text: storagePayload,
+        before_score: currentScore,
+        after_score: afterScore,
+        improvement_percentage: 0,
+        changes_made: optimizedResumeData.changes_made,
+        mode: "design",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const textOnlyNote = optimizeMode === "text"
+      ? "\nMODE: TEXT-ONLY REWRITE — Rewrite EVERY bullet to be stronger. Do not add new projects. Focus purely on impact, metrics, and senior phrasing."
+      : "\nMODE: FULL OPTIMIZATION — Rewrite bullets, rewrite summary, and may add up to " + maxNewProjects + " realistic projects.";
+
+    const systemPrompt = `You are a world-class resume writer who has crafted resumes for FAANG engineers, McKinsey consultants, and C-suite executives. Produce executive-grade, hard-hitting content.${textOnlyNote}
 
 ABSOLUTE RULES — VIOLATION = FAILURE:
 1. Personal info (name, email, phone, location, links) MUST stay EXACTLY as given. DO NOT invent new contact info.
 2. ALL company names, job titles, employment dates MUST stay EXACTLY as given.
 3. ALL education details MUST stay EXACTLY as given.
 4. DO NOT add work experience that doesn't exist. DO NOT add certifications that don't exist.
-5. DO NOT add skills the person clearly doesn't have — only add skills that are DIRECTLY inferable from their education, coursework, or listed experience.
+5. Only add skills directly inferable from the person's education, coursework, or listed experience.
 6. Keep the SAME number of experience entries. Do not add or remove jobs.
 
 WHAT YOU CAN DO:
-a. REWRITE each bullet point to be more impactful with realistic metrics and strong action verbs
-b. REWRITE the professional summary to target the ${roleName} role
-c. ADD up to ${maxNewProjects} academic/personal projects ONLY IF the person has fewer than 2 projects. Projects must be realistic given their education and skills.
-d. ADD skills ONLY if directly inferable from education (e.g., student studying CS can claim Python)
-e. IMPROVE wording without changing facts
+a. REWRITE every bullet as a high-impact, recruiter-magnet statement: strong action verb + scope + quantified outcome + business impact.
+b. REWRITE the professional summary as a 3–4 sentence executive-grade pitch targeting the ${roleName} role, packed with trend keywords.
+c. EXPAND bullets to 2 lines when it improves clarity. There is NO upper word limit. Be substantive, never sparse.
+d. Use 2024–2026 industry vocabulary, modern tools, and current best practices for ${roleName}.
+e. ADD up to ${maxNewProjects} realistic projects (if mode allows).
+f. ADD skills only if directly inferable from existing experience or education.
 
-BULLET ENHANCEMENT — be realistic:
-- "Helped clients buy properties" → "Assisted 25+ clients in purchasing residential properties, managing transactions valued at $450K+"
-- "Provided customer support" → "Delivered technical support for 100+ daily inquiries, achieving 92% first-contact resolution rate"
-- Numbers must be PLAUSIBLE for the role level and company size
-- Every bullet should have at least one metric
+BULLET TRANSFORMATION EXAMPLES:
+- weak: "Helped clients buy properties"
+  strong: "Closed 25+ residential transactions worth $4.5M+ in annual GMV by orchestrating end-to-end buyer journeys, negotiating contracts, and partnering with mortgage/legal counterparts — ranked top 10% of agents in the brokerage."
+- weak: "Built a website"
+  strong: "Architected and shipped a production React + TypeScript marketing site serving 12K monthly visitors, improving Lighthouse performance from 62 → 96 and lifting lead conversion by 38%."
+EVERY bullet must include: strong verb, scope/scale, quantified outcome, and business/user impact. Plausible numbers only.
 
 ${maxNewProjects > 0 ? `PROJECT RULES — Create up to ${maxNewProjects} projects that:
 - Are realistic given education: ${educationBlock}
 - Use ONLY technologies from their skills: ${skills.join(", ")}
-- Have 2-3 bullet points with metrics
+- Have 3 bullet points with metrics and modern tooling
 - Are labeled as academic/personal projects` : "DO NOT add any new projects — the person already has enough."}
 
 TARGET ROLE: ${roleName}
@@ -126,9 +194,9 @@ ${projectBlock || "No projects listed"}
 CERTIFICATIONS: ${certifications.join(", ") || "None"}
 
 FULL TEXT:
-${resumeText.substring(0, 8000)}
+${resumeText}
 
-Return the optimized resume. KEEP ALL ORIGINAL FACTS. Only enhance bullets, improve summary, and add max ${maxNewProjects} projects if needed.`;
+Return the optimized resume. KEEP ALL ORIGINAL FACTS. Make every bullet substantially stronger. No length cap on bullets — depth over brevity.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -137,7 +205,7 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Only enhance bullets, impr
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "openai/gpt-5",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -178,7 +246,7 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Only enhance bullets, impr
                     },
                     required: ["name", "description", "technologies"]
                   },
-                  description: `Maximum ${Math.min(2, existingProjects.length + maxNewProjects)} projects total`
+                  description: `Maximum ${Math.min(4, existingProjects.length + maxNewProjects)} projects total`
                 },
                 changes_made: {
                   type: "array",
@@ -233,9 +301,9 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Only enhance bullets, impr
 
     if (!optimizedData) throw new Error("Failed to generate optimized resume");
 
-    // Cap projects at 2 max
-    if (optimizedData.projects && optimizedData.projects.length > 2) {
-      optimizedData.projects = optimizedData.projects.slice(0, 2);
+    // Cap projects at 4 max
+    if (optimizedData.projects && optimizedData.projects.length > 4) {
+      optimizedData.projects = optimizedData.projects.slice(0, 4);
     }
 
     const optimizedResumeData = {
@@ -308,9 +376,9 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Only enhance bullets, impr
 
     // Score improvement
     const changeCount = (optimizedData.changes_made || []).length;
-    const projectBonus = Math.min(2, (optimizedData.projects || []).length) * 3;
+    const projectBonus = Math.min(4, (optimizedData.projects || []).length) * 3;
     const skillBonus = Math.max(0, (optimizedData.skills || []).length - skills.length) * 1.5;
-    const improvementPct = Math.min(25, Math.round(changeCount * 1.5 + projectBonus + skillBonus));
+    const improvementPct = Math.min(40, Math.round(changeCount * 2 + projectBonus + skillBonus));
     const afterScore = Math.min(100, currentScore + improvementPct);
 
     const storagePayload = JSON.stringify({
