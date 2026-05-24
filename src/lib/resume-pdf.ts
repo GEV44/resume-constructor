@@ -639,6 +639,24 @@ export function generateResumePDF(
       case "minimal":
         generateMinimal(doc, parsedData);
         break;
+      case "executive":
+        generateAccentBar(doc, parsedData, [13, 35, 64], [201, 168, 76]); // navy + gold
+        break;
+      case "creative":
+        generateAccentBar(doc, parsedData, [124, 58, 237], [236, 72, 153]); // purple + pink
+        break;
+      case "tech":
+        generateAccentBar(doc, parsedData, [15, 23, 42], [16, 185, 129]); // slate + emerald
+        break;
+      case "elegant":
+        generateElegant(doc, parsedData);
+        break;
+      case "bold":
+        generateBold(doc, parsedData);
+        break;
+      case "compact":
+        generateCompact(doc, parsedData);
+        break;
       case "professional":
       default:
         generateProfessional(doc, parsedData);
@@ -676,8 +694,625 @@ export function downloadResumePDF(
 
 export function getTemplateList(): { id: ResumeTemplate; name: string; description: string }[] {
   return [
-    { id: "professional", name: "Professional", description: "ATS-friendly single column. Most widely used format." },
-    { id: "modern", name: "Modern", description: "Two-column with blue header. Great for tech roles." },
-    { id: "minimal", name: "Minimal", description: "Ultra clean, centered header. Typography-focused." },
+    { id: "professional", name: "Professional", description: "ATS-friendly single column. Universal classic." },
+    { id: "modern", name: "Modern", description: "Two-column with blue header. Tech-friendly." },
+    { id: "minimal", name: "Minimal", description: "Ultra clean, typography-focused." },
+    { id: "executive", name: "Executive", description: "Navy + gold accent bar. C-suite & finance." },
+    { id: "creative", name: "Creative", description: "Purple + pink gradient. Designers & marketing." },
+    { id: "tech", name: "Tech", description: "Slate + emerald. Engineers & data roles." },
+    { id: "elegant", name: "Elegant", description: "Serif headings, refined whitespace." },
+    { id: "bold", name: "Bold", description: "Heavy color block header — instant attention." },
+    { id: "compact", name: "Compact", description: "Maximum content on one page." },
   ];
+}
+
+// ==================== ACCENT BAR TEMPLATE (configurable colors) ====================
+function generateAccentBar(doc: jsPDF, data: ResumeData, primary: [number, number, number], accent: [number, number, number]) {
+  const m = 14;
+  const w = 210 - m * 2;
+  const black: [number, number, number] = [25, 25, 25];
+  const gray: [number, number, number] = [110, 110, 110];
+  const white: [number, number, number] = [255, 255, 255];
+
+  // Top color block
+  doc.setFillColor(...primary);
+  doc.rect(0, 0, 210, 32, "F");
+  // Accent stripe
+  doc.setFillColor(...accent);
+  doc.rect(0, 32, 210, 2.5, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(...white);
+  doc.text((data.contact.name || "Your Name").toUpperCase(), m, 16);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  const cp: string[] = [];
+  if (data.contact.email) cp.push(data.contact.email);
+  if (data.contact.phone) cp.push(data.contact.phone);
+  if (data.contact.location) cp.push(data.contact.location);
+  doc.text(cp.join("   |   "), m, 23);
+  const lp: string[] = [];
+  if (data.contact.linkedin) lp.push(data.contact.linkedin);
+  if (data.contact.github) lp.push(data.contact.github);
+  if (lp.length > 0) {
+    doc.setFontSize(7.8);
+    doc.text(lp.join("   |   "), m, 28);
+  }
+
+  let y = 42;
+
+  if (data.summary) {
+    y = sectionHeading(doc, "Professional Summary", y, m, w, accent);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.2);
+    doc.setTextColor(...black);
+    const sl = wrap(doc, data.summary, w, 9.2);
+    doc.text(sl, m, y);
+    y += sl.length * 3.6 + 5;
+  }
+
+  if (data.experience.length > 0) {
+    y = sectionHeading(doc, "Experience", y, m, w, accent);
+    for (const exp of data.experience) {
+      y = checkPage(doc, y, 18);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(...primary);
+      doc.text(exp.role, m, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...gray);
+      if (exp.duration) {
+        const dw = doc.getTextWidth(exp.duration);
+        doc.text(exp.duration, m + w - dw, y);
+      }
+      y += 4;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...accent);
+      doc.text(exp.company, m, y);
+      y += 4.2;
+      for (const r of exp.responsibilities) {
+        y = bulletPoint(doc, r, y, m + 2, w - 2, black);
+        y += 0.6;
+      }
+      y += 3.5;
+    }
+  }
+
+  if (data.projects.length > 0) {
+    y = sectionHeading(doc, "Projects", y, m, w, accent);
+    for (const proj of data.projects) {
+      y = checkPage(doc, y, 12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...primary);
+      doc.text(proj.name, m, y);
+      y += 4;
+      const descParts = proj.description.split("\n").filter(Boolean);
+      for (const part of descParts) {
+        y = bulletPoint(doc, part.replace(/^[-•]\s*/, ""), y, m + 2, w - 2, black);
+      }
+      if (proj.technologies.length > 0) {
+        doc.setFontSize(7.8);
+        doc.setTextColor(...accent);
+        doc.text(proj.technologies.join(" · "), m, y + 1);
+        y += 4.5;
+      }
+      y += 2.5;
+    }
+  }
+
+  if (data.skills.length > 0 || data.tools.length > 0) {
+    y = sectionHeading(doc, "Skills & Tools", y, m, w, accent);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...black);
+    if (data.skills.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Skills: ", m, y);
+      const lw = doc.getTextWidth("Skills: ");
+      doc.setFont("helvetica", "normal");
+      const sl = wrap(doc, data.skills.join(" · "), w - lw, 9);
+      doc.text(sl, m + lw, y);
+      y += sl.length * 3.6 + 1;
+    }
+    if (data.tools.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Tools: ", m, y);
+      const lw = doc.getTextWidth("Tools: ");
+      doc.setFont("helvetica", "normal");
+      const tl = wrap(doc, data.tools.join(" · "), w - lw, 9);
+      doc.text(tl, m + lw, y);
+      y += tl.length * 3.6 + 1;
+    }
+    y += 3;
+  }
+
+  if (data.education.length > 0) {
+    y = sectionHeading(doc, "Education", y, m, w, accent);
+    for (const edu of data.education) {
+      y = checkPage(doc, y);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...black);
+      doc.text(edu.degree, m, y);
+      if (edu.year) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...gray);
+        const yw = doc.getTextWidth(edu.year);
+        doc.text(edu.year, m + w - yw, y);
+      }
+      y += 4;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...gray);
+      doc.text(`${edu.institution}${edu.field ? " — " + edu.field : ""}`, m, y);
+      y += 5;
+    }
+  }
+
+  if (data.certifications.length > 0) {
+    y = sectionHeading(doc, "Certifications", y, m, w, accent);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...black);
+    for (const cert of data.certifications) {
+      y = checkPage(doc, y);
+      doc.text("•  " + cert, m, y);
+      y += 4;
+    }
+  }
+}
+
+// ==================== ELEGANT (serif-style, refined) ====================
+function generateElegant(doc: jsPDF, data: ResumeData) {
+  const m = 20;
+  const w = 210 - m * 2;
+  const black: [number, number, number] = [40, 40, 40];
+  const gray: [number, number, number] = [120, 120, 120];
+  const accent: [number, number, number] = [139, 90, 60]; // warm brown
+  let y = 22;
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(26);
+  doc.setTextColor(...black);
+  const nm = data.contact.name || "Your Name";
+  const nw = doc.getTextWidth(nm);
+  doc.text(nm, (210 - nw) / 2, y);
+  y += 7;
+
+  doc.setFont("times", "italic");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...accent);
+  const cp: string[] = [];
+  if (data.contact.email) cp.push(data.contact.email);
+  if (data.contact.phone) cp.push(data.contact.phone);
+  if (data.contact.location) cp.push(data.contact.location);
+  const ct = cp.join("  ·  ");
+  const cw = doc.getTextWidth(ct);
+  doc.text(ct, (210 - cw) / 2, y);
+  y += 5;
+
+  drawLine(doc, m, y, w, accent, 0.4);
+  y += 6;
+
+  const sec = (t: string, cy: number) => {
+    cy = checkPage(doc, cy, 10);
+    doc.setFont("times", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...accent);
+    doc.text(t, m, cy);
+    cy += 1.5;
+    drawLine(doc, m, cy, w, accent, 0.3);
+    return cy + 4.5;
+  };
+
+  if (data.summary) {
+    y = sec("PROFILE", y);
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...black);
+    const sl = wrap(doc, data.summary, w, 10);
+    doc.text(sl, m, y);
+    y += sl.length * 4 + 5;
+  }
+
+  if (data.experience.length > 0) {
+    y = sec("EXPERIENCE", y);
+    for (const exp of data.experience) {
+      y = checkPage(doc, y, 16);
+      doc.setFont("times", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(...black);
+      doc.text(exp.role, m, y);
+      doc.setFont("times", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      if (exp.duration) {
+        const dw = doc.getTextWidth(exp.duration);
+        doc.text(exp.duration, m + w - dw, y);
+      }
+      y += 4.2;
+      doc.setFont("times", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(...accent);
+      doc.text(exp.company, m, y);
+      y += 4.2;
+      doc.setFont("times", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...black);
+      for (const r of exp.responsibilities) {
+        y = checkPage(doc, y);
+        const lines = wrap(doc, r, w - 5, 9.5);
+        doc.text("—", m, y);
+        doc.text(lines, m + 4, y);
+        y += lines.length * 4 + 0.5;
+      }
+      y += 3;
+    }
+  }
+
+  if (data.projects.length > 0) {
+    y = sec("PROJECTS", y);
+    for (const proj of data.projects) {
+      y = checkPage(doc, y, 12);
+      doc.setFont("times", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...black);
+      doc.text(proj.name, m, y);
+      y += 4;
+      doc.setFont("times", "normal");
+      doc.setFontSize(9.5);
+      const dp = proj.description.split("\n").filter(Boolean);
+      for (const part of dp) {
+        const lines = wrap(doc, part.replace(/^[-•]\s*/, ""), w - 5, 9.5);
+        doc.text("—", m, y);
+        doc.text(lines, m + 4, y);
+        y += lines.length * 4;
+      }
+      if (proj.technologies.length > 0) {
+        doc.setFont("times", "italic");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...accent);
+        doc.text(proj.technologies.join(" · "), m, y + 0.5);
+        y += 4;
+      }
+      y += 2;
+    }
+  }
+
+  if (data.skills.length > 0) {
+    y = sec("SKILLS", y);
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...black);
+    const st = [...data.skills, ...(data.tools || [])].join("  ·  ");
+    const sl = wrap(doc, st, w, 10);
+    doc.text(sl, m, y);
+    y += sl.length * 4 + 4;
+  }
+
+  if (data.education.length > 0) {
+    y = sec("EDUCATION", y);
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...black);
+    for (const edu of data.education) {
+      y = checkPage(doc, y);
+      doc.setFont("times", "bold");
+      doc.text(edu.degree, m, y);
+      doc.setFont("times", "italic");
+      doc.setTextColor(...gray);
+      const right = edu.year || "";
+      if (right) {
+        const rw = doc.getTextWidth(right);
+        doc.text(right, m + w - rw, y);
+      }
+      y += 4;
+      doc.setFont("times", "normal");
+      doc.text(`${edu.institution}${edu.field ? " — " + edu.field : ""}`, m, y);
+      doc.setTextColor(...black);
+      y += 5;
+    }
+  }
+}
+
+// ==================== BOLD (heavy block header, max attention) ====================
+function generateBold(doc: jsPDF, data: ResumeData) {
+  const m = 14;
+  const w = 210 - m * 2;
+  const primary: [number, number, number] = [233, 69, 96]; // coral red
+  const dark: [number, number, number] = [20, 20, 30];
+  const black: [number, number, number] = [30, 30, 30];
+  const gray: [number, number, number] = [110, 110, 110];
+  const white: [number, number, number] = [255, 255, 255];
+
+  doc.setFillColor(...dark);
+  doc.rect(0, 0, 210, 48, "F");
+  doc.setFillColor(...primary);
+  doc.rect(0, 0, 8, 48, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(28);
+  doc.setTextColor(...white);
+  doc.text((data.contact.name || "Your Name").toUpperCase(), m, 22);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...primary);
+  const cp: string[] = [];
+  if (data.contact.email) cp.push(data.contact.email);
+  if (data.contact.phone) cp.push(data.contact.phone);
+  if (data.contact.location) cp.push(data.contact.location);
+  doc.text(cp.join("   |   "), m, 32);
+  const lp: string[] = [];
+  if (data.contact.linkedin) lp.push(data.contact.linkedin);
+  if (data.contact.github) lp.push(data.contact.github);
+  if (lp.length > 0) {
+    doc.setFontSize(8.5);
+    doc.setTextColor(220, 220, 220);
+    doc.text(lp.join("   |   "), m, 39);
+  }
+
+  let y = 58;
+
+  const sec = (t: string, cy: number) => {
+    cy = checkPage(doc, cy, 10);
+    doc.setFillColor(...primary);
+    doc.rect(m, cy - 4, 3, 5, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...dark);
+    doc.text(t.toUpperCase(), m + 6, cy);
+    return cy + 5.5;
+  };
+
+  if (data.summary) {
+    y = sec("Summary", y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...black);
+    const sl = wrap(doc, data.summary, w, 9.5);
+    doc.text(sl, m, y);
+    y += sl.length * 3.8 + 4;
+  }
+
+  if (data.experience.length > 0) {
+    y = sec("Experience", y);
+    for (const exp of data.experience) {
+      y = checkPage(doc, y, 16);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(...dark);
+      doc.text(exp.role, m, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...gray);
+      if (exp.duration) {
+        const dw = doc.getTextWidth(exp.duration);
+        doc.text(exp.duration, m + w - dw, y);
+      }
+      y += 4;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.2);
+      doc.setTextColor(...primary);
+      doc.text(exp.company, m, y);
+      y += 4;
+      for (const r of exp.responsibilities) {
+        y = bulletPoint(doc, r, y, m + 2, w - 2, black);
+      }
+      y += 3;
+    }
+  }
+
+  if (data.projects.length > 0) {
+    y = sec("Projects", y);
+    for (const proj of data.projects) {
+      y = checkPage(doc, y, 12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...dark);
+      doc.text(proj.name, m, y);
+      y += 4;
+      const dp = proj.description.split("\n").filter(Boolean);
+      for (const part of dp) {
+        y = bulletPoint(doc, part.replace(/^[-•]\s*/, ""), y, m + 2, w - 2, black);
+      }
+      if (proj.technologies.length > 0) {
+        doc.setFontSize(7.8);
+        doc.setTextColor(...primary);
+        doc.text(proj.technologies.join(" · "), m, y + 0.5);
+        y += 4;
+      }
+      y += 2;
+    }
+  }
+
+  if (data.skills.length > 0 || data.tools.length > 0) {
+    y = sec("Skills", y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...black);
+    const all = [...data.skills, ...data.tools];
+    // Pill rendering
+    let cx = m;
+    const py = y;
+    for (const s of all) {
+      const tw = doc.getTextWidth(s) + 6;
+      if (cx + tw > m + w) {
+        cx = m;
+        y += 6;
+      }
+      doc.setFillColor(255, 230, 235);
+      doc.roundedRect(cx, y - 3.5, tw, 5, 1.5, 1.5, "F");
+      doc.setTextColor(...primary);
+      doc.text(s, cx + 3, y);
+      cx += tw + 2;
+    }
+    y += 8;
+    doc.setTextColor(...black);
+  }
+
+  if (data.education.length > 0) {
+    y = sec("Education", y);
+    for (const edu of data.education) {
+      y = checkPage(doc, y);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...dark);
+      doc.text(edu.degree, m, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...gray);
+      if (edu.year) {
+        const yw = doc.getTextWidth(edu.year);
+        doc.text(edu.year, m + w - yw, y);
+      }
+      y += 4;
+      doc.text(`${edu.institution}${edu.field ? " — " + edu.field : ""}`, m, y);
+      y += 5;
+    }
+  }
+}
+
+// ==================== COMPACT (dense, fits more on one page) ====================
+function generateCompact(doc: jsPDF, data: ResumeData) {
+  const m = 12;
+  const w = 210 - m * 2;
+  const black: [number, number, number] = [25, 25, 25];
+  const gray: [number, number, number] = [110, 110, 110];
+  const accent: [number, number, number] = [37, 99, 235];
+  let y = 14;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(...black);
+  doc.text(data.contact.name || "Your Name", m, y);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...gray);
+  const cp: string[] = [];
+  if (data.contact.email) cp.push(data.contact.email);
+  if (data.contact.phone) cp.push(data.contact.phone);
+  if (data.contact.location) cp.push(data.contact.location);
+  if (data.contact.linkedin) cp.push(data.contact.linkedin);
+  if (data.contact.github) cp.push(data.contact.github);
+  const ct = cp.join("  |  ");
+  const tw = doc.getTextWidth(ct);
+  doc.text(ct, m + w - tw, y);
+  y += 3;
+  drawLine(doc, m, y, w, accent, 0.4);
+  y += 4;
+
+  const sec = (t: string, cy: number) => {
+    cy = checkPage(doc, cy, 8);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...accent);
+    doc.text(t.toUpperCase(), m, cy);
+    return cy + 3.5;
+  };
+
+  if (data.summary) {
+    y = sec("Summary", y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...black);
+    const sl = wrap(doc, data.summary, w, 8.5);
+    doc.text(sl, m, y);
+    y += sl.length * 3.2 + 3;
+  }
+
+  if (data.experience.length > 0) {
+    y = sec("Experience", y);
+    for (const exp of data.experience) {
+      y = checkPage(doc, y, 12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...black);
+      doc.text(`${exp.role} — ${exp.company}`, m, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.8);
+      doc.setTextColor(...gray);
+      if (exp.duration) {
+        const dw = doc.getTextWidth(exp.duration);
+        doc.text(exp.duration, m + w - dw, y);
+      }
+      y += 3.3;
+      doc.setFontSize(8.2);
+      doc.setTextColor(...black);
+      for (const r of exp.responsibilities) {
+        y = checkPage(doc, y);
+        const lines = wrap(doc, r, w - 4, 8.2);
+        doc.text("•", m, y);
+        doc.text(lines, m + 3, y);
+        y += lines.length * 3.1;
+      }
+      y += 2;
+    }
+  }
+
+  if (data.projects.length > 0) {
+    y = sec("Projects", y);
+    for (const proj of data.projects) {
+      y = checkPage(doc, y, 8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.8);
+      doc.setTextColor(...black);
+      doc.text(proj.name, m, y);
+      if (proj.technologies.length > 0) {
+        const nw = doc.getTextWidth(proj.name + "  ");
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.setTextColor(...accent);
+        doc.text("| " + proj.technologies.join(", "), m + nw, y);
+      }
+      y += 3.2;
+      doc.setFontSize(8.2);
+      doc.setTextColor(...black);
+      const dp = proj.description.split("\n").filter(Boolean);
+      for (const part of dp) {
+        const lines = wrap(doc, part.replace(/^[-•]\s*/, ""), w - 4, 8.2);
+        doc.text("•", m, y);
+        doc.text(lines, m + 3, y);
+        y += lines.length * 3.1;
+      }
+      y += 1.5;
+    }
+  }
+
+  if (data.skills.length > 0 || data.tools.length > 0) {
+    y = sec("Skills", y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.2);
+    doc.setTextColor(...black);
+    const all = [...data.skills, ...data.tools].join("  ·  ");
+    const sl = wrap(doc, all, w, 8.2);
+    doc.text(sl, m, y);
+    y += sl.length * 3.1 + 3;
+  }
+
+  if (data.education.length > 0) {
+    y = sec("Education", y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...black);
+    for (const edu of data.education) {
+      y = checkPage(doc, y);
+      doc.setFont("helvetica", "bold");
+      doc.text(edu.degree, m, y);
+      const right = `${edu.institution}${edu.year ? " — " + edu.year : ""}`;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...gray);
+      const rw = doc.getTextWidth(right);
+      doc.text(right, m + w - rw, y);
+      doc.setTextColor(...black);
+      y += 3.6;
+    }
+  }
 }
