@@ -420,9 +420,9 @@ export async function downloadResumePDF(plainText: string, data: ResumeData | nu
       filename,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true } as any,
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
       pagebreak: { mode: ["css", "legacy"], avoid: [".block", "li", ".exp"] },
-    }).save();
+    } as any).save();
   } finally {
     container.remove();
   }
