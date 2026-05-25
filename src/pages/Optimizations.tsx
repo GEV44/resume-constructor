@@ -22,7 +22,7 @@ export default function Optimizations() {
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [changes, setChanges] = useState<ChangeItem[]>([]);
   const [plainText, setPlainText] = useState("");
-  const [template, setTemplate] = useState<ResumeTemplate>("professional");
+  const [template, setTemplate] = useState<ResumeTemplate>("executive");
   const [showPreview, setShowPreview] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<"changes" | "preview" | "download">("changes");
@@ -76,10 +76,15 @@ export default function Optimizations() {
     setLoadingDetail(false);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!selected) return;
-    downloadResumePDF(plainText, resumeData, template, `resume-${selected.job_role}-${template}.pdf`);
-    toast.success("PDF downloaded!");
+    try {
+      toast.loading("Generating PDF...", { id: "pdf" });
+      await downloadResumePDF(plainText, resumeData, template, `resume-${selected.job_role}-${template}.pdf`);
+      toast.success("PDF downloaded!", { id: "pdf" });
+    } catch (e: any) {
+      toast.error("Failed to generate PDF: " + (e?.message || "unknown"), { id: "pdf" });
+    }
   };
 
   const gradeForScore = (score: number) => {
