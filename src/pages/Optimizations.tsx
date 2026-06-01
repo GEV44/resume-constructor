@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import {
   downloadResumePDF, getTemplateList, parseOptimizedPayload,
+  renderResumeHtml,
   type ResumeTemplate, type ResumeData, type ChangeItem,
 } from "@/lib/resume-pdf";
 
@@ -265,14 +266,33 @@ export default function Optimizations() {
                       {/* Preview tab */}
                       {activeTab === "preview" && (
                         <div className="glass rounded-2xl overflow-hidden">
-                          <div className="px-5 py-3 border-b border-glass-border flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-primary" />
-                            <span className="font-heading font-bold text-sm">Optimized Resume</span>
+                          <div className="px-5 py-3 border-b border-glass-border flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-primary" />
+                              <span className="font-heading font-bold text-sm">Live Preview — {templates.find(t => t.id === template)?.name}</span>
+                            </div>
+                            <select
+                              value={template}
+                              onChange={(e) => setTemplate(e.target.value as ResumeTemplate)}
+                              className="bg-background border border-glass-border rounded-md px-2 py-1 text-xs"
+                            >
+                              {templates.map((t) => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                              ))}
+                            </select>
                           </div>
-                          <div className="p-5 max-h-[600px] overflow-y-auto">
-                            <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
-                              {plainText}
-                            </pre>
+                          <div className="bg-muted/30 p-4 max-h-[700px] overflow-auto flex justify-center">
+                            <div
+                              className="bg-white shadow-2xl"
+                              style={{
+                                width: "210mm",
+                                minHeight: "297mm",
+                                transform: "scale(0.65)",
+                                transformOrigin: "top center",
+                                marginBottom: "-35%",
+                              }}
+                              dangerouslySetInnerHTML={{ __html: renderResumeHtml(template, resumeData) }}
+                            />
                           </div>
                         </div>
                       )}
