@@ -1,5 +1,6 @@
 // HTML-to-PDF resume rendering using real CSS so text never gets cut off.
-import html2pdf from "html2pdf.js";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 export type ResumeTemplate =
   | "executive" | "modern" | "minimal" | "creative" | "tech"
