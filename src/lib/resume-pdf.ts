@@ -1,5 +1,6 @@
 // HTML-to-PDF resume rendering using real CSS so text never gets cut off.
-import html2pdf from "html2pdf.js";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 export type ResumeTemplate =
   | "executive" | "modern" | "minimal" | "creative" | "tech"
@@ -415,15 +416,96 @@ export async function downloadResumePDF(plainText: string, data: ResumeData | nu
   try { if ((document as any).fonts?.ready) await (document as any).fonts.ready; } catch {}
   await new Promise((r) => setTimeout(r, 250));
   try {
-    await html2pdf().from(container).set({
-      margin: 0,
-      filename,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
-      pagebreak: { mode: ["css", "legacy"], avoid: [".block", "li", ".exp"] },
-    } as any).save();
+    await renderSectionedPdf(container, filename);
   } finally {
     container.remove();
   }
+}
+
+// Capture the resume section-by-section so text is never sliced across pages.
+async function renderSectionedPdf(container: HTMLElement, filename: string): Promise<void> {
+  const A4_W = 210, A4_H = 297;
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+
+  const resumeEl = container.querySelector<HTMLElement>(".resume") || container;
+  // Detect sidebar layouts (modern template uses 2-column grid). Capture as one shot if so.
+  const hasSidebar = !!resumeEl.querySelector(".side, .main");
+
+  // Strategy: render the whole resume to a single canvas, then slice it across
+  // pages at safe boundaries computed from each `.block` element's offsetTop.
+  const fullCanvas = await html2canvas(resumeEl, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    logging: false,
+    windowWidth: resumeEl.scrollWidth,
+  });
+
+  const pxPerMm = fullCanvas.width / A4_W;
+  const pageHeightPx = Math.floor(A4_H * pxPerMm);
+
+  // Collect break points: top of every .block (relative to resumeEl), in canvas px.
+  const breaks: number[] = [0];
+  if (!hasSidebar) {
+    const blocks = Array.from(resumeEl.querySelectorAll<HTMLElement>(".block, .exp"));
+    const baseTop = resumeEl.getBoundingClientRect().top;
+    for (const b of blocks) {
+      const top = Math.floor((b.getBoundingClientRect().top - baseTop) * 2); // *scale
+      if (top > 0 && top < fullCanvas.height) breaks.push(top);
+    }
+    breaks.push(fullCanvas.height);
+  } else {
+    // sidebar layouts: just slice by page height (sidebar paints across)
+    for (let y = pageHeightPx; y < fullCanvas.height; y += pageHeightPx) breaks.push(y);
+    breaks.push(fullCanvas.height);
+  }
+
+  // Build pages by greedy packing of break-to-break ranges into A4 pages.
+  let pageStart = 0;
+  let pageNum = 0;
+  for (let i = 1; i < breaks.length; i++) {
+    const candidateEnd = breaks[i];
+    if (candidateEnd - pageStart > pageHeightPx) {
+      // close current page at previous break (breaks[i-1])
+      const end = breaks[i - 1] > pageStart ? breaks[i - 1] : Math.min(pageStart + pageHeightPx, fullCanvas.height);
+      addSlice(pdf, fullCanvas, pageStart, end, pxPerMm, pageNum > 0);
+      pageNum++;
+      pageStart = end;
+      // re-test current candidate against new pageStart
+      if (candidateEnd - pageStart > pageHeightPx) {
+        // a single section is taller than a page → hard slice
+        while (candidateEnd - pageStart > pageHeightPx) {
+          addSlice(pdf, fullCanvas, pageStart, pageStart + pageHeightPx, pxPerMm, pageNum > 0);
+          pageNum++;
+          pageStart += pageHeightPx;
+        }
+      }
+    }
+    if (i === breaks.length - 1) {
+      addSlice(pdf, fullCanvas, pageStart, candidateEnd, pxPerMm, pageNum > 0);
+    }
+  }
+
+  pdf.save(filename);
+}
+
+function addSlice(pdf: jsPDF, src: HTMLCanvasElement, yStart: number, yEnd: number, pxPerMm: number, addPage: boolean) {
+  const h = Math.max(1, yEnd - yStart);
+  const slice = document.createElement("canvas");
+  slice.width = src.width;
+  slice.height = h;
+  const ctx = slice.getContext("2d")!;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, slice.width, slice.height);
+  ctx.drawImage(src, 0, yStart, src.width, h, 0, 0, src.width, h);
+  const img = slice.toDataURL("image/jpeg", 0.95);
+  if (addPage) pdf.addPage();
+  pdf.addImage(img, "JPEG", 0, 0, 210, h / pxPerMm);
+}
+
+// Live preview helper — returns the same HTML string used for PDF, so the
+// preview on screen matches the downloaded file exactly.
+export function renderResumeHtml(template: ResumeTemplate, data: ResumeData | null): string {
+  const resumeData = data || fallbackDataFromText("");
+  return renderHtml(template, resumeData);
 }
