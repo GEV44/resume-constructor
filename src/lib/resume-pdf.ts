@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
 export type ResumeTemplate =
-  | "executive" | "modern" | "minimal" | "creative" | "tech"
+  | "ats" | "executive" | "modern" | "minimal" | "creative" | "tech"
   | "elegant" | "bold" | "editorial" | "compact";
 
 export interface ChangeItem { type: string; location: string; before: string; after: string; }
@@ -34,6 +34,7 @@ export function parseOptimizedPayload(raw: string): { text: string; structured: 
 
 export function getTemplateList() {
   return [
+    { id: "ats" as ResumeTemplate, name: "ATS Plain (Text Only)", description: "Pure black & white, Times New Roman — maximum ATS compatibility" },
     { id: "executive" as ResumeTemplate, name: "Executive", description: "Navy + gold, two-column — C-suite ready" },
     { id: "modern" as ResumeTemplate, name: "Modern", description: "Dark sidebar, gradient accents — 2026 trend" },
     { id: "minimal" as ResumeTemplate, name: "Minimal", description: "Editorial whitespace, hairline rules" },
@@ -109,6 +110,7 @@ function executiveHtml(d: ResumeData): string {
       ${edu ? `<div class="block"><div class="section-title" style="margin-top:0;">Education</div>${edu}</div>` : ""}
     </div>
     ${d.certifications?.length ? `<div class="block"><div class="section-title">Certifications</div><div class="skill-grid">${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-grid">${d.languages.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
   </div>`;
 }
 
@@ -180,6 +182,8 @@ function minimalHtml(d: ResumeData): string {
     ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-head"><div><span class="exp-role">${esc(p.name)}</span><span class="exp-co">  ·  ${esc((p.technologies || []).join(", "))}</span></div></div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">Skills</div><div class="skill-row">${[...d.skills, ...d.tools].map(esc).join("  ·  ")}</div></div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div><span class="exp-role">${esc(e.degree)}</span><span class="exp-co">  ·  ${esc(e.institution)}</span></div><div class="exp-date">${esc(e.year)}</div></div></div>`).join("")}</div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-row">${d.languages.map(esc).join("  ·  ")}</div></div>` : ""}
+    ${d.certifications?.length ? `<div class="block"><div class="section-title">Certifications</div><div class="skill-row">${d.certifications.map(esc).join("  ·  ")}</div></div>` : ""}
   </div>`;
 }
 
@@ -214,6 +218,8 @@ function creativeHtml(d: ResumeData): string {
         ${d.skills.length || d.tools.length ? `<div class="section block"><div class="section-title">Skills</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
         ${d.education.length ? `<div class="section block"><div class="section-title">Education</div>${d.education.map((e) => `<div style="margin-bottom:6px;"><div style="font-weight:800;font-size:10.5px;">${esc(e.degree)}</div><div style="font-size:10px;color:#7c3aed;">${esc(e.institution)} · ${esc(e.year)}</div></div>`).join("")}</div>` : ""}
       </div>
+      ${d.languages?.length ? `<div class="section block"><div class="section-title">Languages</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
+      ${d.certifications?.length ? `<div class="section block"><div class="section-title">Certifications</div>${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>` : ""}
     </div>
   </div>`;
 }
@@ -247,6 +253,8 @@ function techHtml(d: ResumeData): string {
     ${d.projects.length ? `<div><div class="section-title">projects/</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">stack.json</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">education.yml</div>${d.education.map((e) => `<div class="edu-row block"><b>${esc(e.degree)}</b> — ${esc(e.institution)} <span style="color:#64748b">(${esc(e.year)})</span></div>`).join("")}</div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">languages.yml</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
+    ${d.certifications?.length ? `<div class="block"><div class="section-title">certs.yml</div>${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>` : ""}
   </div>`;
 }
 
@@ -275,6 +283,8 @@ function elegantHtml(d: ResumeData): string {
     ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div></div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">Expertise</div><div class="skill-row">${[...d.skills, ...d.tools].map(esc).join("  ·  ")}</div></div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)}</div><div class="exp-co">${esc(e.institution)} · <span class="exp-date">${esc(e.year)}</span></div></div></div>`).join("")}</div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-row">${d.languages.map(esc).join("  ·  ")}</div></div>` : ""}
+    ${d.certifications?.length ? `<div class="block"><div class="section-title">Certifications</div><div class="skill-row">${d.certifications.map(esc).join("  ·  ")}</div></div>` : ""}
   </div>`;
 }
 
@@ -306,6 +316,8 @@ function boldHtml(d: ResumeData): string {
       ${d.projects.length ? `<div class="section"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
       ${d.skills.length || d.tools.length ? `<div class="section block"><div class="section-title">Skills</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
       ${d.education.length ? `<div class="section block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)}</div><div class="exp-date">${esc(e.year)}</div></div><div class="exp-co">${esc(e.institution)}</div></div>`).join("")}</div>` : ""}
+      ${d.languages?.length ? `<div class="section block"><div class="section-title">Languages</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
+      ${d.certifications?.length ? `<div class="section block"><div class="section-title">Certifications</div>${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>` : ""}
     </div>
   </div>`;
 }
@@ -377,6 +389,57 @@ function compactHtml(d: ResumeData): string {
     ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)} · <span class="exp-co">${esc((p.technologies || []).join(", "))}</span></div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">Skills</div><div class="skill-row">${[...d.skills, ...d.tools].map(esc).join(" · ")}</div></div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)} · <span class="exp-co">${esc(e.institution)}</span></div><div class="exp-date">${esc(e.year)}</div></div></div>`).join("")}</div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-row">${d.languages.map(esc).join(" · ")}</div></div>` : ""}
+    ${d.certifications?.length ? `<div class="block"><div class="section-title">Certifications</div><div class="skill-row">${d.certifications.map(esc).join(" · ")}</div></div>` : ""}
+  </div>`;
+}
+
+function atsHtml(d: ResumeData): string {
+  // Pure ATS-safe: black & white, Times New Roman, no icons, no colors, no chips.
+  const css = `
+    .resume { width: 210mm; min-height: 297mm; background:#fff; color:#000;
+              font-family: 'Times New Roman', Times, serif; font-size: 11px;
+              line-height: 1.45; padding: 18mm 18mm; }
+    .resume * { box-sizing: border-box; }
+    .resume p, .resume li, .resume div, .resume span { overflow-wrap: anywhere; }
+    .ats-name { font-size: 22px; font-weight: 700; text-align: center; }
+    .ats-contact { text-align: center; font-size: 11px; margin-top: 4px; }
+    .ats-h2 { font-size: 12px; font-weight: 700; text-transform: uppercase;
+              border-bottom: 1px solid #000; margin: 14px 0 6px; padding-bottom: 2px; }
+    .ats-row { display:flex; justify-content:space-between; font-size: 11px; }
+    .ats-role { font-weight: 700; }
+    .ats-co { font-style: italic; }
+    .resume ul { list-style: disc; padding-left: 20px; margin: 4px 0 8px; }
+    .resume li { margin-bottom: 3px; page-break-inside: avoid; }
+    .ats-block { page-break-inside: avoid; }
+    .ats-skill-line { font-size: 11px; margin-bottom: 4px; }
+  `;
+  const contact = contactBits(d.contact).join(" | ");
+  const exp = (d.experience || []).map((e) => `
+    <div class="ats-block" style="margin-bottom:10px;">
+      <div class="ats-row"><span class="ats-role">${esc(e.role)}, ${esc(e.company)}</span><span>${esc(e.duration)}</span></div>
+      <ul>${(e.responsibilities || []).filter(Boolean).map((b) => `<li>${esc(b.replace(/^[-•·]\s*/, ""))}</li>`).join("")}</ul>
+    </div>`).join("");
+  const proj = (d.projects || []).map((p) => `
+    <div class="ats-block" style="margin-bottom:10px;">
+      <div class="ats-role">${esc(p.name)}${p.technologies?.length ? ` (${esc(p.technologies.join(", "))})` : ""}</div>
+      <ul>${(p.description || "").split("\n").filter(Boolean).map((b) => `<li>${esc(b.replace(/^[-•·]\s*/, ""))}</li>`).join("")}</ul>
+    </div>`).join("");
+  const edu = (d.education || []).map((e) => `
+    <div class="ats-block" style="margin-bottom:6px;">
+      <div class="ats-row"><span class="ats-role">${esc(e.degree)}${e.field ? `, ${esc(e.field)}` : ""}</span><span>${esc(e.year)}</span></div>
+      <div class="ats-co">${esc(e.institution)}</div>
+    </div>`).join("");
+  return `<style>${css}</style><div class="resume">
+    <div class="ats-name">${esc(d.contact.name || "Your Name")}</div>
+    <div class="ats-contact">${contact}</div>
+    ${d.summary ? `<div class="ats-block"><div class="ats-h2">Summary</div><div>${esc(d.summary)}</div></div>` : ""}
+    ${(d.skills?.length || d.tools?.length) ? `<div class="ats-block"><div class="ats-h2">Skills</div><div class="ats-skill-line">${[...(d.skills||[]), ...(d.tools||[])].map(esc).join(", ")}</div></div>` : ""}
+    ${exp ? `<div><div class="ats-h2">Experience</div>${exp}</div>` : ""}
+    ${proj ? `<div><div class="ats-h2">Projects</div>${proj}</div>` : ""}
+    ${edu ? `<div><div class="ats-h2">Education</div>${edu}</div>` : ""}
+    ${d.certifications?.length ? `<div class="ats-block"><div class="ats-h2">Certifications</div><div>${d.certifications.map(esc).join(", ")}</div></div>` : ""}
+    ${d.languages?.length ? `<div class="ats-block"><div class="ats-h2">Languages</div><div>${d.languages.map(esc).join(", ")}</div></div>` : ""}
   </div>`;
 }
 
@@ -384,6 +447,7 @@ function renderHtml(template: ResumeTemplate, data: ResumeData): string {
   const fonts = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">`;
   let body = "";
   switch (template) {
+    case "ats": body = atsHtml(data); break;
     case "executive": body = executiveHtml(data); break;
     case "modern": body = modernHtml(data); break;
     case "minimal": body = minimalHtml(data); break;

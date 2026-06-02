@@ -246,7 +246,7 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Make every bullet substant
                     },
                     required: ["name", "description", "technologies"]
                   },
-                  description: `Maximum ${Math.min(4, existingProjects.length + maxNewProjects)} projects total`
+                  description: `Include ALL existing projects (rewritten) plus up to ${maxNewProjects} new ones. Do NOT drop any existing project.`
                 },
                 changes_made: {
                   type: "array",
@@ -301,10 +301,7 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Make every bullet substant
 
     if (!optimizedData) throw new Error("Failed to generate optimized resume");
 
-    // Cap projects at 4 max
-    if (optimizedData.projects && optimizedData.projects.length > 4) {
-      optimizedData.projects = optimizedData.projects.slice(0, 4);
-    }
+    // No cap on projects — preserve everything the model returned plus any originals.
 
     const optimizedResumeData = {
       contact: contactInfo,
