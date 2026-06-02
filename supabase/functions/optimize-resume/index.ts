@@ -246,7 +246,7 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Make every bullet substant
                     },
                     required: ["name", "description", "technologies"]
                   },
-                  description: `Maximum ${Math.min(4, existingProjects.length + maxNewProjects)} projects total`
+                  description: `Include ALL existing projects (rewritten) plus up to ${maxNewProjects} new ones. Do NOT drop any existing project.`
                 },
                 changes_made: {
                   type: "array",
