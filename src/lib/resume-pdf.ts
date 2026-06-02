@@ -218,6 +218,8 @@ function creativeHtml(d: ResumeData): string {
         ${d.skills.length || d.tools.length ? `<div class="section block"><div class="section-title">Skills</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
         ${d.education.length ? `<div class="section block"><div class="section-title">Education</div>${d.education.map((e) => `<div style="margin-bottom:6px;"><div style="font-weight:800;font-size:10.5px;">${esc(e.degree)}</div><div style="font-size:10px;color:#7c3aed;">${esc(e.institution)} · ${esc(e.year)}</div></div>`).join("")}</div>` : ""}
       </div>
+      ${d.languages?.length ? `<div class="section block"><div class="section-title">Languages</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
+      ${d.certifications?.length ? `<div class="section block"><div class="section-title">Certifications</div>${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>` : ""}
     </div>
   </div>`;
 }
