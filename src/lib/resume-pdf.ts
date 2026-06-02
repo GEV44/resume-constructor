@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
 export type ResumeTemplate =
-  | "executive" | "modern" | "minimal" | "creative" | "tech"
+  | "ats" | "executive" | "modern" | "minimal" | "creative" | "tech"
   | "elegant" | "bold" | "editorial" | "compact";
 
 export interface ChangeItem { type: string; location: string; before: string; after: string; }
@@ -34,6 +34,7 @@ export function parseOptimizedPayload(raw: string): { text: string; structured: 
 
 export function getTemplateList() {
   return [
+    { id: "ats" as ResumeTemplate, name: "ATS Plain (Text Only)", description: "Pure black & white, Times New Roman — maximum ATS compatibility" },
     { id: "executive" as ResumeTemplate, name: "Executive", description: "Navy + gold, two-column — C-suite ready" },
     { id: "modern" as ResumeTemplate, name: "Modern", description: "Dark sidebar, gradient accents — 2026 trend" },
     { id: "minimal" as ResumeTemplate, name: "Minimal", description: "Editorial whitespace, hairline rules" },
