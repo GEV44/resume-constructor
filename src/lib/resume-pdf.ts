@@ -316,6 +316,8 @@ function boldHtml(d: ResumeData): string {
       ${d.projects.length ? `<div class="section"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
       ${d.skills.length || d.tools.length ? `<div class="section block"><div class="section-title">Skills</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
       ${d.education.length ? `<div class="section block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)}</div><div class="exp-date">${esc(e.year)}</div></div><div class="exp-co">${esc(e.institution)}</div></div>`).join("")}</div>` : ""}
+      ${d.languages?.length ? `<div class="section block"><div class="section-title">Languages</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
+      ${d.certifications?.length ? `<div class="section block"><div class="section-title">Certifications</div>${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>` : ""}
     </div>
   </div>`;
 }
