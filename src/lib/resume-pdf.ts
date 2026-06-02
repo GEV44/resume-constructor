@@ -381,8 +381,56 @@ function compactHtml(d: ResumeData): string {
   </div>`;
 }
 
+function atsHtml(d: ResumeData): string {
+  // Pure ATS-safe: black & white, Times New Roman, no icons, no colors, no chips.
+  const css = `
+    .resume { width: 210mm; min-height: 297mm; background:#fff; color:#000;
+              font-family: 'Times New Roman', Times, serif; font-size: 11px;
+              line-height: 1.45; padding: 18mm 18mm; }
+    .resume * { box-sizing: border-box; }
+    .resume p, .resume li, .resume div, .resume span { overflow-wrap: anywhere; }
+    .ats-name { font-size: 22px; font-weight: 700; text-align: center; }
+    .ats-contact { text-align: center; font-size: 11px; margin-top: 4px; }
+    .ats-h2 { font-size: 12px; font-weight: 700; text-transform: uppercase;
+              border-bottom: 1px solid #000; margin: 14px 0 6px; padding-bottom: 2px; }
+    .ats-row { display:flex; justify-content:space-between; font-size: 11px; }
+    .ats-role { font-weight: 700; }
+    .ats-co { font-style: italic; }
+    .resume ul { list-style: disc; padding-left: 20px; margin: 4px 0 8px; }
+    .resume li { margin-bottom: 3px; page-break-inside: avoid; }
+    .ats-block { page-break-inside: avoid; }
+    .ats-skill-line { font-size: 11px; margin-bottom: 4px; }
+  `;
+  const contact = contactBits(d.contact).join(" | ");
+  const exp = (d.experience || []).map((e) => `
+    <div class="ats-block" style="margin-bottom:10px;">
+      <div class="ats-row"><span class="ats-role">${esc(e.role)}, ${esc(e.company)}</span><span>${esc(e.duration)}</span></div>
+      <ul>${(e.responsibilities || []).filter(Boolean).map((b) => `<li>${esc(b.replace(/^[-•·]\s*/, ""))}</li>`).join("")}</ul>
+    </div>`).join("");
+  const proj = (d.projects || []).map((p) => `
+    <div class="ats-block" style="margin-bottom:10px;">
+      <div class="ats-role">${esc(p.name)}${p.technologies?.length ? ` (${esc(p.technologies.join(", "))})` : ""}</div>
+      <ul>${(p.description || "").split("\n").filter(Boolean).map((b) => `<li>${esc(b.replace(/^[-•·]\s*/, ""))}</li>`).join("")}</ul>
+    </div>`).join("");
+  const edu = (d.education || []).map((e) => `
+    <div class="ats-block" style="margin-bottom:6px;">
+      <div class="ats-row"><span class="ats-role">${esc(e.degree)}${e.field ? `, ${esc(e.field)}` : ""}</span><span>${esc(e.year)}</span></div>
+      <div class="ats-co">${esc(e.institution)}</div>
+    </div>`).join("");
+  return `<style>${css}</style><div class="resume">
+    <div class="ats-name">${esc(d.contact.name || "Your Name")}</div>
+    <div class="ats-contact">${contact}</div>
+    ${d.summary ? `<div class="ats-block"><div class="ats-h2">Summary</div><div>${esc(d.summary)}</div></div>` : ""}
+    ${(d.skills?.length || d.tools?.length) ? `<div class="ats-block"><div class="ats-h2">Skills</div><div class="ats-skill-line">${[...(d.skills||[]), ...(d.tools||[])].map(esc).join(", ")}</div></div>` : ""}
+    ${exp ? `<div><div class="ats-h2">Experience</div>${exp}</div>` : ""}
+    ${proj ? `<div><div class="ats-h2">Projects</div>${proj}</div>` : ""}
+    ${edu ? `<div><div class="ats-h2">Education</div>${edu}</div>` : ""}
+    ${d.certifications?.length ? `<div class="ats-block"><div class="ats-h2">Certifications</div><div>${d.certifications.map(esc).join(", ")}</div></div>` : ""}
+    ${d.languages?.length ? `<div class="ats-block"><div class="ats-h2">Languages</div><div>${d.languages.map(esc).join(", ")}</div></div>` : ""}
+  </div>`;
+}
+
 function renderHtml(template: ResumeTemplate, data: ResumeData): string {
-  // resolved at call time
   const fonts = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">`;
   let body = "";
   switch (template) {
