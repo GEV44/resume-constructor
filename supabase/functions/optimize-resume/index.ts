@@ -301,10 +301,7 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Make every bullet substant
 
     if (!optimizedData) throw new Error("Failed to generate optimized resume");
 
-    // Cap projects at 4 max
-    if (optimizedData.projects && optimizedData.projects.length > 4) {
-      optimizedData.projects = optimizedData.projects.slice(0, 4);
-    }
+    // No cap on projects — preserve everything the model returned plus any originals.
 
     const optimizedResumeData = {
       contact: contactInfo,
