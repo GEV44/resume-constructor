@@ -389,6 +389,8 @@ function compactHtml(d: ResumeData): string {
     ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)} · <span class="exp-co">${esc((p.technologies || []).join(", "))}</span></div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">Skills</div><div class="skill-row">${[...d.skills, ...d.tools].map(esc).join(" · ")}</div></div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)} · <span class="exp-co">${esc(e.institution)}</span></div><div class="exp-date">${esc(e.year)}</div></div></div>`).join("")}</div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-row">${d.languages.map(esc).join(" · ")}</div></div>` : ""}
+    ${d.certifications?.length ? `<div class="block"><div class="section-title">Certifications</div><div class="skill-row">${d.certifications.map(esc).join(" · ")}</div></div>` : ""}
   </div>`;
 }
 
