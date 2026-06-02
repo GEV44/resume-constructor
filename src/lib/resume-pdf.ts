@@ -253,6 +253,8 @@ function techHtml(d: ResumeData): string {
     ${d.projects.length ? `<div><div class="section-title">projects/</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">stack.json</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">education.yml</div>${d.education.map((e) => `<div class="edu-row block"><b>${esc(e.degree)}</b> — ${esc(e.institution)} <span style="color:#64748b">(${esc(e.year)})</span></div>`).join("")}</div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">languages.yml</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
+    ${d.certifications?.length ? `<div class="block"><div class="section-title">certs.yml</div>${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>` : ""}
   </div>`;
 }
 
