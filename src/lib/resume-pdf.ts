@@ -110,6 +110,7 @@ function executiveHtml(d: ResumeData): string {
       ${edu ? `<div class="block"><div class="section-title" style="margin-top:0;">Education</div>${edu}</div>` : ""}
     </div>
     ${d.certifications?.length ? `<div class="block"><div class="section-title">Certifications</div><div class="skill-grid">${d.certifications.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
+    ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-grid">${d.languages.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
   </div>`;
 }
 
