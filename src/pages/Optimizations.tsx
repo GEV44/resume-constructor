@@ -314,28 +314,38 @@ export default function Optimizations() {
                               </select>
                               <button
                                 onClick={handleDownload}
-                                className="text-xs px-3 py-1 rounded-md bg-primary/20 text-primary hover:bg-primary/30 flex items-center gap-1"
+                                disabled={downloading}
+                                className="text-xs px-3 py-1 rounded-md bg-primary/20 text-primary hover:bg-primary/30 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                <Download className="w-3 h-3" /> PDF
+                                {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} PDF
                               </button>
                             </div>
                           </div>
-                          {/* A4 is 210x297mm. Scale to ~0.6 and use a wrapper sized to the scaled dimensions so the full resume scrolls properly. */}
-                          <div className="bg-muted/30 p-4 max-h-[720px] overflow-auto flex justify-center">
-                            <div style={{ width: "126mm" /* 210 * 0.6 */ }}>
+                          {/* Full-resume live preview. Width is auto-scaled to the
+                              container; height grows with content — never clipped. */}
+                          <div className="bg-muted/30 p-4 overflow-auto">
+                            <div
+                              ref={previewWrapRef}
+                              style={{
+                                width: "100%",
+                                height: scaledHeight ? `${scaledHeight}px` : "auto",
+                                position: "relative",
+                                background: "#fff",
+                                borderRadius: 8,
+                                boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+                                overflow: "hidden",
+                              }}
+                            >
                               <div
+                                ref={resumeRef}
                                 style={{
-                                  width: "210mm",
-                                  transform: "scale(0.6)",
+                                  width: "794px",
                                   transformOrigin: "top left",
+                                  transform: `scale(${scale})`,
+                                  background: "#fff",
                                 }}
-                              >
-                                <div
-                                  className="bg-white shadow-2xl"
-                                  style={{ width: "210mm", minHeight: "297mm" }}
-                                  dangerouslySetInnerHTML={{ __html: renderResumeHtml(template, resumeData) }}
-                                />
-                              </div>
+                                dangerouslySetInnerHTML={{ __html: renderResumeHtml(template, resumeData) }}
+                              />
                             </div>
                           </div>
                         </div>
