@@ -527,11 +527,13 @@ async function renderSectionedPdf(container: HTMLElement, filename: string): Pro
   // Build pages by greedy packing of break-to-break ranges into A4 pages.
   let pageStart = 0;
   let pageNum = 0;
-  for (let i = 1; i < breaks.length; i++) {
-    const candidateEnd = breaks[i];
+  // Ensure breaks are sorted & deduped
+  const sorted = Array.from(new Set(breaks)).sort((a, b) => a - b);
+  for (let i = 1; i < sorted.length; i++) {
+    const candidateEnd = sorted[i];
     if (candidateEnd - pageStart > pageHeightPx) {
       // close current page at previous break (breaks[i-1])
-      const end = breaks[i - 1] > pageStart ? breaks[i - 1] : Math.min(pageStart + pageHeightPx, fullCanvas.height);
+      const end = sorted[i - 1] > pageStart ? sorted[i - 1] : Math.min(pageStart + pageHeightPx, fullCanvas.height);
       addSlice(pdf, fullCanvas, pageStart, end, pxPerMm, pageNum > 0);
       pageNum++;
       pageStart = end;
@@ -545,8 +547,10 @@ async function renderSectionedPdf(container: HTMLElement, filename: string): Pro
         }
       }
     }
-    if (i === breaks.length - 1) {
-      addSlice(pdf, fullCanvas, pageStart, candidateEnd, pxPerMm, pageNum > 0);
+    if (i === sorted.length - 1) {
+      if (candidateEnd > pageStart) {
+        addSlice(pdf, fullCanvas, pageStart, candidateEnd, pxPerMm, pageNum > 0);
+      }
     }
   }
 
