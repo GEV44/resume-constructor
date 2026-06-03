@@ -486,89 +486,47 @@ export async function downloadResumePDF(plainText: string, data: ResumeData | nu
   }
 }
 
-// Capture the resume section-by-section so text is never sliced across pages.
+// Render the whole resume to one canvas, then slice it page-by-page into A4.
+// Simple + bullet-proof: every pixel of content ends up in the PDF.
 async function renderSectionedPdf(container: HTMLElement, filename: string): Promise<void> {
-  const A4_W = 210, A4_H = 297;
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+  const A4_WIDTH_MM = 210;
+  const A4_HEIGHT_MM = 297;
 
   const resumeEl = container.querySelector<HTMLElement>(".resume") || container;
-  // Detect sidebar layouts (modern template uses 2-column grid). Capture as one shot if so.
-  const hasSidebar = !!resumeEl.querySelector(".side, .main");
 
-  // Strategy: render the whole resume to a single canvas, then slice it across
-  // pages at safe boundaries computed from each `.block` element's offsetTop.
-  const fullCanvas = await html2canvas(resumeEl, {
+  const canvas = await html2canvas(resumeEl, {
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     backgroundColor: "#ffffff",
     logging: false,
     windowWidth: resumeEl.scrollWidth,
   });
 
-  const pxPerMm = fullCanvas.width / A4_W;
-  const pageHeightPx = Math.floor(A4_H * pxPerMm);
+  const A4_WIDTH_PX = canvas.width;
+  const A4_HEIGHT_PX = Math.round((A4_WIDTH_PX * A4_HEIGHT_MM) / A4_WIDTH_MM);
 
-  // Collect break points: top of every .block (relative to resumeEl), in canvas px.
-  const breaks: number[] = [0];
-  if (!hasSidebar) {
-    const blocks = Array.from(resumeEl.querySelectorAll<HTMLElement>(".block, .exp"));
-    const baseTop = resumeEl.getBoundingClientRect().top;
-    for (const b of blocks) {
-      const top = Math.floor((b.getBoundingClientRect().top - baseTop) * 2); // *scale
-      if (top > 0 && top < fullCanvas.height) breaks.push(top);
-    }
-    breaks.push(fullCanvas.height);
-  } else {
-    // sidebar layouts: just slice by page height (sidebar paints across)
-    for (let y = pageHeightPx; y < fullCanvas.height; y += pageHeightPx) breaks.push(y);
-    breaks.push(fullCanvas.height);
-  }
+  const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+  const totalPages = Math.max(1, Math.ceil(canvas.height / A4_HEIGHT_PX));
 
-  // Build pages by greedy packing of break-to-break ranges into A4 pages.
-  let pageStart = 0;
-  let pageNum = 0;
-  // Ensure breaks are sorted & deduped
-  const sorted = Array.from(new Set(breaks)).sort((a, b) => a - b);
-  for (let i = 1; i < sorted.length; i++) {
-    const candidateEnd = sorted[i];
-    if (candidateEnd - pageStart > pageHeightPx) {
-      // close current page at previous break (breaks[i-1])
-      const end = sorted[i - 1] > pageStart ? sorted[i - 1] : Math.min(pageStart + pageHeightPx, fullCanvas.height);
-      addSlice(pdf, fullCanvas, pageStart, end, pxPerMm, pageNum > 0);
-      pageNum++;
-      pageStart = end;
-      // re-test current candidate against new pageStart
-      if (candidateEnd - pageStart > pageHeightPx) {
-        // a single section is taller than a page → hard slice
-        while (candidateEnd - pageStart > pageHeightPx) {
-          addSlice(pdf, fullCanvas, pageStart, pageStart + pageHeightPx, pxPerMm, pageNum > 0);
-          pageNum++;
-          pageStart += pageHeightPx;
-        }
-      }
-    }
-    if (i === sorted.length - 1) {
-      if (candidateEnd > pageStart) {
-        addSlice(pdf, fullCanvas, pageStart, candidateEnd, pxPerMm, pageNum > 0);
-      }
-    }
+  for (let page = 0; page < totalPages; page++) {
+    if (page > 0) pdf.addPage();
+    const srcY = page * A4_HEIGHT_PX;
+    const srcH = Math.min(A4_HEIGHT_PX, canvas.height - srcY);
+
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = A4_WIDTH_PX;
+    pageCanvas.height = A4_HEIGHT_PX;
+    const ctx = pageCanvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+    ctx.drawImage(canvas, 0, srcY, A4_WIDTH_PX, srcH, 0, 0, A4_WIDTH_PX, srcH);
+
+    const imgData = pageCanvas.toDataURL("image/jpeg", 0.95);
+    pdf.addImage(imgData, "JPEG", 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM);
   }
 
   pdf.save(filename);
-}
-
-function addSlice(pdf: jsPDF, src: HTMLCanvasElement, yStart: number, yEnd: number, pxPerMm: number, addPage: boolean) {
-  const h = Math.max(1, yEnd - yStart);
-  const slice = document.createElement("canvas");
-  slice.width = src.width;
-  slice.height = h;
-  const ctx = slice.getContext("2d")!;
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, slice.width, slice.height);
-  ctx.drawImage(src, 0, yStart, src.width, h, 0, 0, src.width, h);
-  const img = slice.toDataURL("image/jpeg", 0.95);
-  if (addPage) pdf.addPage();
-  pdf.addImage(img, "JPEG", 0, 0, 210, h / pxPerMm);
 }
 
 // Live preview helper — returns the same HTML string used for PDF, so the
