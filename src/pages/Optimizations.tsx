@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -29,6 +29,33 @@ export default function Optimizations() {
   const [activeTab, setActiveTab] = useState<"changes" | "preview" | "download">("changes");
 
   const templates = getTemplateList();
+
+  // --- Live preview scaling: fit the 210mm-wide resume into its container
+  // without ever clipping its height. ---
+  const previewWrapRef = useRef<HTMLDivElement | null>(null);
+  const resumeRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(0.6);
+  const [scaledHeight, setScaledHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const A4_WIDTH_PX = 794; // 210mm at 96dpi
+    const recalc = () => {
+      const wrap = previewWrapRef.current;
+      const inner = resumeRef.current;
+      if (!wrap || !inner) return;
+      const w = wrap.clientWidth;
+      const s = Math.min(1, w / A4_WIDTH_PX);
+      setScale(s);
+      // measure unscaled height of the resume, then apply scale
+      const naturalH = inner.scrollHeight;
+      setScaledHeight(Math.max(400, naturalH * s));
+    };
+    recalc();
+    const ro = new ResizeObserver(recalc);
+    if (previewWrapRef.current) ro.observe(previewWrapRef.current);
+    if (resumeRef.current) ro.observe(resumeRef.current);
+    return () => ro.disconnect();
+  }, [template, resumeData, activeTab]);
 
   useEffect(() => {
     if (!user) return;
@@ -77,14 +104,18 @@ export default function Optimizations() {
     setLoadingDetail(false);
   };
 
+  const [downloading, setDownloading] = useState(false);
   const handleDownload = async () => {
-    if (!selected) return;
+    if (!selected || downloading) return;
+    setDownloading(true);
     try {
-      toast.loading("Generating PDF...", { id: "pdf" });
+      toast.loading("Generating PDF…", { id: "pdf" });
       await downloadResumePDF(plainText, resumeData, template, `resume-${selected.job_role}-${template}.pdf`);
-      toast.success("PDF downloaded!", { id: "pdf" });
+      toast.success("Resume downloaded ✓", { id: "pdf" });
     } catch (e: any) {
       toast.error("Failed to generate PDF: " + (e?.message || "unknown"), { id: "pdf" });
+    } finally {
+      setDownloading(false);
     }
   };
 
