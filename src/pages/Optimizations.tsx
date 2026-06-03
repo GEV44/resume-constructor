@@ -266,33 +266,46 @@ export default function Optimizations() {
                       {/* Preview tab */}
                       {activeTab === "preview" && (
                         <div className="glass rounded-2xl overflow-hidden">
-                          <div className="px-5 py-3 border-b border-glass-border flex items-center justify-between gap-2">
+                          <div className="px-5 py-3 border-b border-glass-border flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2">
                               <FileText className="w-4 h-4 text-primary" />
                               <span className="font-heading font-bold text-sm">Live Preview — {templates.find(t => t.id === template)?.name}</span>
                             </div>
-                            <select
-                              value={template}
-                              onChange={(e) => setTemplate(e.target.value as ResumeTemplate)}
-                              className="bg-background border border-glass-border rounded-md px-2 py-1 text-xs"
-                            >
-                              {templates.map((t) => (
-                                <option key={t.id} value={t.id}>{t.name}</option>
-                              ))}
-                            </select>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={template}
+                                onChange={(e) => setTemplate(e.target.value as ResumeTemplate)}
+                                className="bg-background border border-glass-border rounded-md px-2 py-1 text-xs"
+                              >
+                                {templates.map((t) => (
+                                  <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={handleDownload}
+                                className="text-xs px-3 py-1 rounded-md bg-primary/20 text-primary hover:bg-primary/30 flex items-center gap-1"
+                              >
+                                <Download className="w-3 h-3" /> PDF
+                              </button>
+                            </div>
                           </div>
-                          <div className="bg-muted/30 p-4 max-h-[700px] overflow-auto flex justify-center">
-                            <div
-                              className="bg-white shadow-2xl"
-                              style={{
-                                width: "210mm",
-                                minHeight: "297mm",
-                                transform: "scale(0.65)",
-                                transformOrigin: "top center",
-                                marginBottom: "-35%",
-                              }}
-                              dangerouslySetInnerHTML={{ __html: renderResumeHtml(template, resumeData) }}
-                            />
+                          {/* A4 is 210x297mm. Scale to ~0.6 and use a wrapper sized to the scaled dimensions so the full resume scrolls properly. */}
+                          <div className="bg-muted/30 p-4 max-h-[720px] overflow-auto flex justify-center">
+                            <div style={{ width: "126mm" /* 210 * 0.6 */ }}>
+                              <div
+                                style={{
+                                  width: "210mm",
+                                  transform: "scale(0.6)",
+                                  transformOrigin: "top left",
+                                }}
+                              >
+                                <div
+                                  className="bg-white shadow-2xl"
+                                  style={{ width: "210mm", minHeight: "297mm" }}
+                                  dangerouslySetInnerHTML={{ __html: renderResumeHtml(template, resumeData) }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
