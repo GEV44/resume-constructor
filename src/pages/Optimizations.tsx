@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import {
   downloadResumePDF, getTemplateList, parseOptimizedPayload,
-  renderResumeHtml,
+  hydrateResumeData, renderResumeHtml,
   type ResumeTemplate, type ResumeData, type ChangeItem,
 } from "@/lib/resume-pdf";
 
@@ -83,23 +83,31 @@ export default function Optimizations() {
     setLoadingDetail(true);
     setActiveTab("changes");
 
-    // Parse the structured payload
+    const { data: originalResume } = item.resume_id
+      ? await supabase
+        .from("resumes")
+        .select("original_text, parsed_json")
+        .eq("id", item.resume_id)
+        .maybeSingle()
+      : { data: null };
+
+    // Parse the structured payload and hydrate it with the original parsed resume
+    // so links, languages, skills, education, projects, and all other facts are never dropped.
     const payload = parseOptimizedPayload(item.optimized_text);
     if (payload) {
-      setResumeData(payload.structured);
-      setChanges(payload.structured.changes_made || []);
+      const hydrated = hydrateResumeData(
+        payload.structured,
+        [originalResume?.original_text, payload.text].filter(Boolean).join("\n"),
+        originalResume?.parsed_json as unknown as ResumeData | null,
+      );
+      setResumeData(hydrated);
+      setChanges(hydrated.changes_made || []);
       setPlainText(payload.text);
     } else {
       // Legacy format — just plain text
       setPlainText(item.optimized_text);
       setChanges([]);
-      // Try to load original parsed data
-      const { data: resume } = await supabase
-        .from("resumes")
-        .select("parsed_json")
-        .eq("id", item.resume_id)
-        .single();
-      setResumeData(resume?.parsed_json as unknown as ResumeData || null);
+      setResumeData(hydrateResumeData(originalResume?.parsed_json as unknown as ResumeData | null, item.optimized_text));
     }
     setLoadingDetail(false);
   };
