@@ -159,7 +159,7 @@ function executiveHtml(d: ResumeData): string {
     .edu-inst { font-size: 10px; color:#475569; font-style: italic; }
     .edu-year { font-size: 9.5px; color:#64748b; }`;
   const exp = d.experience.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.role)}</div><div class="exp-date">${esc(e.duration)}</div></div><div class="exp-co">${esc(e.company)}</div><ul>${bullets(e.responsibilities)}</ul></div>`).join("");
-  const proj = d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" • "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("");
+  const proj = d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" • "))}</div><ul>${projectBullets(p)}</ul></div>`).join("");
   const edu = d.education.map((e) => `<div class="edu-item block"><div class="edu-degree">${esc(e.degree)}${e.field ? " — " + esc(e.field) : ""}</div><div class="edu-inst">${esc(e.institution)} <span class="edu-year">· ${esc(e.year)}</span></div></div>`).join("");
   return `<style>${css}</style><div class="resume">
     <div class="block"><div class="name">${esc(d.contact.name || "Your Name")}</div><div class="role-tag">Executive Professional</div><div class="header-rule"></div><div class="contact">${contactBits(d.contact).join("  ·  ")}</div></div>
@@ -198,7 +198,7 @@ function modernHtml(d: ResumeData): string {
     .exp li { font-size: 10px; color:#334155; padding-left: 14px; position: relative; margin-bottom: 4px; }
     .exp li::before { content:""; position:absolute; left:0; top:6px; width:6px; height:6px; background:#0ea5e9; border-radius:2px; }`;
   const exp = d.experience.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.role)}</div><div class="exp-date">${esc(e.duration)}</div></div><div class="exp-co">${esc(e.company)}</div><ul>${bullets(e.responsibilities)}</ul></div>`).join("");
-  const proj = d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" • "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("");
+  const proj = d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" • "))}</div><ul>${projectBullets(p)}</ul></div>`).join("");
   return `<style>${css}</style><div class="resume">
     <aside class="side">
       <div class="block"><div class="name">${esc(d.contact.name || "Your Name")}</div><div class="role-tag">Professional</div></div>
@@ -240,7 +240,7 @@ function minimalHtml(d: ResumeData): string {
     <div class="rule"></div>
     ${d.summary ? `<div class="block"><div class="section-title">Summary</div><p class="summary">${esc(d.summary)}</p></div>` : ""}
     ${exp ? `<div><div class="section-title">Experience</div>${exp}</div>` : ""}
-    ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-head"><div><span class="exp-role">${esc(p.name)}</span><span class="exp-co">  ·  ${esc((p.technologies || []).join(", "))}</span></div></div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
+    ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-head"><div><span class="exp-role">${esc(p.name)}</span><span class="exp-co">  ·  ${esc((p.technologies || []).join(", "))}</span></div></div><ul>${projectBullets(p)}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">Skills</div><div class="skill-row">${[...d.skills, ...d.tools].map(esc).join("  ·  ")}</div></div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div><span class="exp-role">${esc(e.degree)}</span><span class="exp-co">  ·  ${esc(e.institution)}</span></div><div class="exp-date">${esc(e.year)}</div></div></div>`).join("")}</div>` : ""}
     ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-row">${d.languages.map(esc).join("  ·  ")}</div></div>` : ""}
@@ -274,7 +274,7 @@ function creativeHtml(d: ResumeData): string {
     <div class="body">
       ${d.summary ? `<div class="section block"><div class="section-title">About</div><p class="summary">${esc(d.summary)}</p></div>` : ""}
       ${exp ? `<div class="section"><div class="section-title">Experience</div>${exp}</div>` : ""}
-      ${d.projects.length ? `<div class="section"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
+      ${d.projects.length ? `<div class="section"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${projectBullets(p)}</ul></div>`).join("")}</div>` : ""}
       <div class="grid2">
         ${d.skills.length || d.tools.length ? `<div class="section block"><div class="section-title">Skills</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
         ${d.education.length ? `<div class="section block"><div class="section-title">Education</div>${d.education.map((e) => `<div style="margin-bottom:6px;"><div style="font-weight:800;font-size:10.5px;">${esc(e.degree)}</div><div style="font-size:10px;color:#7c3aed;">${esc(e.institution)} · ${esc(e.year)}</div></div>`).join("")}</div>` : ""}
@@ -311,7 +311,7 @@ function techHtml(d: ResumeData): string {
     <div class="block"><div class="name">${esc(d.contact.name || "your_name")}</div><div class="role-tag">// Software Engineer</div><div class="contact">${contactBits(d.contact).map((c) => `<span>▹</span> ${c}`).join("  ")}</div></div>
     ${d.summary ? `<div class="block"><div class="section-title">summary.md</div><div class="summary">${esc(d.summary)}</div></div>` : ""}
     ${exp ? `<div><div class="section-title">experience.log</div>${exp}</div>` : ""}
-    ${d.projects.length ? `<div><div class="section-title">projects/</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
+    ${d.projects.length ? `<div><div class="section-title">projects/</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${projectBullets(p)}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">stack.json</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">education.yml</div>${d.education.map((e) => `<div class="edu-row block"><b>${esc(e.degree)}</b> — ${esc(e.institution)} <span style="color:#64748b">(${esc(e.year)})</span></div>`).join("")}</div>` : ""}
     ${d.languages?.length ? `<div class="block"><div class="section-title">languages.yml</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
@@ -341,7 +341,7 @@ function elegantHtml(d: ResumeData): string {
     <div class="block"><div class="name">${esc(d.contact.name || "Your Name")}</div><div class="ornament">· · ·</div><div class="contact">${contactBits(d.contact).join("   ·   ")}</div></div>
     ${d.summary ? `<div class="block"><div class="section-title">Profile</div><p class="summary">${esc(d.summary)}</p></div>` : ""}
     ${exp ? `<div><div class="section-title">Experience</div>${exp}</div>` : ""}
-    ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div></div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
+    ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div></div><ul>${projectBullets(p)}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">Expertise</div><div class="skill-row">${[...d.skills, ...d.tools].map(esc).join("  ·  ")}</div></div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)}</div><div class="exp-co">${esc(e.institution)} · <span class="exp-date">${esc(e.year)}</span></div></div></div>`).join("")}</div>` : ""}
     ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-row">${d.languages.map(esc).join("  ·  ")}</div></div>` : ""}
@@ -374,7 +374,7 @@ function boldHtml(d: ResumeData): string {
     <div class="body">
       ${d.summary ? `<div class="section block"><div class="section-title">Summary</div><p class="summary">${esc(d.summary)}</p></div>` : ""}
       ${exp ? `<div class="section"><div class="section-title">Experience</div>${exp}</div>` : ""}
-      ${d.projects.length ? `<div class="section"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
+      ${d.projects.length ? `<div class="section"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${projectBullets(p)}</ul></div>`).join("")}</div>` : ""}
       ${d.skills.length || d.tools.length ? `<div class="section block"><div class="section-title">Skills</div>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
       ${d.education.length ? `<div class="section block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)}</div><div class="exp-date">${esc(e.year)}</div></div><div class="exp-co">${esc(e.institution)}</div></div>`).join("")}</div>` : ""}
       ${d.languages?.length ? `<div class="section block"><div class="section-title">Languages</div>${d.languages.map((l) => `<span class="chip">${esc(l)}</span>`).join("")}</div>` : ""}
@@ -414,7 +414,7 @@ function editorialHtml(d: ResumeData): string {
     <div class="cols">
       <div>
         ${exp ? `<div class="block"><div class="section-title">Experience</div>${exp}</div>` : ""}
-        ${d.projects.length ? `<div class="block" style="margin-top:14px;"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
+        ${d.projects.length ? `<div class="block" style="margin-top:14px;"><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)}</div><div class="exp-co">${esc((p.technologies || []).join(" · "))}</div><ul>${projectBullets(p)}</ul></div>`).join("")}</div>` : ""}
       </div>
       <aside>
         ${d.skills.length || d.tools.length ? `<div class="side-block block"><b>Skills</b>${[...d.skills, ...d.tools].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>` : ""}
@@ -447,7 +447,7 @@ function compactHtml(d: ResumeData): string {
     <div class="head block"><div><div class="name">${esc(d.contact.name || "Your Name")}</div></div><div class="contact">${contactBits(d.contact).map((c) => `<div>${c}</div>`).join("")}</div></div>
     ${d.summary ? `<div class="block"><div class="section-title">Summary</div><div class="summary">${esc(d.summary)}</div></div>` : ""}
     ${exp ? `<div><div class="section-title">Experience</div>${exp}</div>` : ""}
-    ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)} · <span class="exp-co">${esc((p.technologies || []).join(", "))}</span></div><ul>${bullets(p.description.split("\n"))}</ul></div>`).join("")}</div>` : ""}
+    ${d.projects.length ? `<div><div class="section-title">Projects</div>${d.projects.map((p) => `<div class="exp"><div class="exp-role">${esc(p.name)} · <span class="exp-co">${esc((p.technologies || []).join(", "))}</span></div><ul>${projectBullets(p)}</ul></div>`).join("")}</div>` : ""}
     ${d.skills.length || d.tools.length ? `<div class="block"><div class="section-title">Skills</div><div class="skill-row">${[...d.skills, ...d.tools].map(esc).join(" · ")}</div></div>` : ""}
     ${d.education.length ? `<div class="block"><div class="section-title">Education</div>${d.education.map((e) => `<div class="exp"><div class="exp-head"><div class="exp-role">${esc(e.degree)} · <span class="exp-co">${esc(e.institution)}</span></div><div class="exp-date">${esc(e.year)}</div></div></div>`).join("")}</div>` : ""}
     ${d.languages?.length ? `<div class="block"><div class="section-title">Languages</div><div class="skill-row">${d.languages.map(esc).join(" · ")}</div></div>` : ""}
@@ -484,7 +484,7 @@ function atsHtml(d: ResumeData): string {
   const proj = (d.projects || []).map((p) => `
     <div class="ats-block" style="margin-bottom:10px;">
       <div class="ats-role">${esc(p.name)}${p.technologies?.length ? ` (${esc(p.technologies.join(", "))})` : ""}</div>
-      <ul>${(p.description || "").split("\n").filter(Boolean).map((b) => `<li>${esc(b.replace(/^[-•·]\s*/, ""))}</li>`).join("")}</ul>
+      <ul>${projectBullets(p)}</ul>
     </div>`).join("");
   const edu = (d.education || []).map((e) => `
     <div class="ats-block" style="margin-bottom:6px;">
