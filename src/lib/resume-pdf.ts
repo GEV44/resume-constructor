@@ -108,17 +108,32 @@ function contactBits(c: ResumeData["contact"]): string[] {
 
 const baseCss = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  .resume { width: 210mm; min-height: 297mm; background: #fff; color: #1f2937;
+  .resume { width: 210mm; min-height: 297mm; height: auto; background: #fff; color: #1f2937;
             font-family: 'Inter','Helvetica Neue',Arial,sans-serif; font-size: 10.5px; line-height: 1.5;
-            -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: visible; }
+  .resume, .resume * { max-height: none !important; overflow: visible !important; }
   .resume ul { list-style: none; }
   .resume li, .resume .block, .resume .exp { page-break-inside: avoid; break-inside: avoid; }
-  .resume p, .resume li, .resume span { overflow-wrap: anywhere; word-break: normal; }
+  .resume p, .resume li, .resume span, .resume div { overflow-wrap: anywhere; word-break: normal; white-space: normal; }
+  .exp-head, .ats-row, .head { gap: 8px; flex-wrap: wrap; }
   .chip { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 9.5px; line-height: 1.4; margin: 0 4px 4px 0; }
 `;
 
-const bullets = (items: string[]) => items.filter(Boolean)
-  .map((b) => `<li>${esc(b.replace(/^[-•·]\s*/, ""))}</li>`).join("");
+function bulletItems(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap((item) => bulletItems(item));
+  return String(value ?? "")
+    .split(/\n|(?=\s*[•·]\s+)|(?=\s+-\s+)/g)
+    .map((item) => item.replace(/^[-•·]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+const bullets = (items: unknown) => bulletItems(items).map((b) => `<li>${esc(b)}</li>`).join("");
+
+function projectBullets(p: ResumeData["projects"][number]): string {
+  const descriptionItems = bulletItems(p.description);
+  const technologyItems = asArray<string>(p.technologies).map((t) => `Technology: ${t}`);
+  return bullets([...descriptionItems, ...technologyItems]);
+}
 
 function executiveHtml(d: ResumeData): string {
   const css = `${baseCss}
