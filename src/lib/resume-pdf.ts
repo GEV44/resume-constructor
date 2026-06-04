@@ -31,12 +31,42 @@ function compactObject<T extends Record<string, unknown>>(value: T): Partial<T> 
 }
 
 function extractContactFromText(text: string): Partial<ResumeData["contact"]> {
+  const firstLine = text.split("\n").map((line) => line.trim()).find(Boolean);
   const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
   const phone = text.match(/(?:\+?\d[\d\s().-]{7,}\d)/)?.[0]?.trim();
   const linkedin = text.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/[^\s|,;]+/i)?.[0];
   const github = text.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[^\s|,;]+/i)?.[0];
   const website = text.match(/(?:https?:\/\/)?(?:www\.)?(?!linkedin\.com|github\.com)[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s|,;]*)?/i)?.[0];
-  return compactObject({ email, phone, linkedin, github, website });
+  return compactObject({ name: firstLine, email, phone, linkedin, github, website });
+}
+
+function extractLanguagesFromText(text: string): string[] {
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  const headerIndex = lines.findIndex((line) => /^languages?\b|^language proficiency\b/i.test(line) && !/programming|core|technical/i.test(line));
+  if (headerIndex === -1) return [];
+  const first = lines[headerIndex].replace(/^languages?\b\s*:?|^language proficiency\b\s*:?/i, "").trim();
+  const following: string[] = first ? [first] : [];
+  for (const line of lines.slice(headerIndex + 1)) {
+    if (/^[A-Z][A-Z\s/&-]{3,}$/.test(line) || /^(summary|experience|work experience|education|projects|skills|technical skills|certifications|awards|interests)\b/i.test(line)) break;
+    following.push(line);
+  }
+  return following.join(", ").split(/[,;|•·]/).map((item) => item.trim()).filter(Boolean);
+}
+
+function uniqueStrings(items: unknown[]): string[] {
+  const seen = new Set<string>();
+  return items.flatMap((item) => asArray<string>(item)).filter((item) => {
+    const key = String(item).trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function mergeByKey<T>(fallback: T[], primary: T[], keyFn: (item: T) => string): T[] {
+  const map = new Map<string, T>();
+  [...fallback, ...primary].forEach((item) => map.set(keyFn(item).toLowerCase(), item));
+  return Array.from(map.values());
 }
 
 function normalizeResumeData(data: Partial<ResumeData> | null | undefined, sourceText = ""): ResumeData {
@@ -62,16 +92,34 @@ function normalizeResumeData(data: Partial<ResumeData> | null | undefined, sourc
     certifications: asArray<string>(data?.certifications),
     total_years_experience: data?.total_years_experience,
     quantified_metrics: asArray<string>(data?.quantified_metrics),
-    languages: asArray<string>(data?.languages),
+    languages: uniqueStrings([extractLanguagesFromText(sourceText), data?.languages]),
     interests: asArray<string>(data?.interests),
     changes_made: asArray<ChangeItem>(data?.changes_made),
+  };
+}
+
+export function hydrateResumeData(data: Partial<ResumeData> | null | undefined, sourceText = "", fallback?: Partial<ResumeData> | null): ResumeData {
+  const primary = normalizeResumeData(data, sourceText);
+  const original = normalizeResumeData(fallback, sourceText);
+  return {
+    ...primary,
+    contact: { ...original.contact, ...compactObject(primary.contact) } as ResumeData["contact"],
+    education: mergeByKey(original.education, primary.education, (e) => `${e.degree}|${e.institution}|${e.year}`),
+    skills: uniqueStrings([original.skills, primary.skills]),
+    tools: uniqueStrings([original.tools, primary.tools]),
+    experience: mergeByKey(original.experience, primary.experience, (e) => `${e.role}|${e.company}|${e.duration}`),
+    projects: mergeByKey(original.projects, primary.projects, (p) => p.name || p.description),
+    certifications: uniqueStrings([original.certifications, primary.certifications]),
+    quantified_metrics: uniqueStrings([original.quantified_metrics, primary.quantified_metrics]),
+    languages: uniqueStrings([original.languages, primary.languages]),
+    interests: uniqueStrings([original.interests, primary.interests]),
   };
 }
 
 export function parseOptimizedPayload(raw: string): { text: string; structured: ResumeData } | null {
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === "object" && p.structured) return { text: p.text || "", structured: normalizeResumeData(p.structured, p.text || "") };
+    if (p && typeof p === "object" && p.structured) return { text: p.text || "", structured: hydrateResumeData(p.structured, p.text || "") };
   } catch { /* legacy */ }
   return null;
 }
