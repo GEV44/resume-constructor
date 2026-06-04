@@ -9,7 +9,7 @@ export type ResumeTemplate =
 export interface ChangeItem { type: string; location: string; before: string; after: string; }
 
 export interface ResumeData {
-  contact: { name: string; email: string; phone: string; location?: string; linkedin?: string; github?: string; telegram?: string; };
+  contact: { name: string; email: string; phone: string; location?: string; linkedin?: string; github?: string; telegram?: string; website?: string; portfolio?: string; };
   summary?: string;
   education: { degree: string; institution: string; year: string; field?: string; description?: string }[];
   skills: string[];
@@ -24,10 +24,54 @@ export interface ResumeData {
   changes_made?: ChangeItem[];
 }
 
+const asArray = <T,>(value: unknown): T[] => Array.isArray(value) ? value.filter(Boolean) as T[] : [];
+
+function compactObject<T extends Record<string, unknown>>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value || {}).filter(([, v]) => String(v ?? "").trim().length > 0)) as Partial<T>;
+}
+
+function extractContactFromText(text: string): Partial<ResumeData["contact"]> {
+  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
+  const phone = text.match(/(?:\+?\d[\d\s().-]{7,}\d)/)?.[0]?.trim();
+  const linkedin = text.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/[^\s|,;]+/i)?.[0];
+  const github = text.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[^\s|,;]+/i)?.[0];
+  const website = text.match(/(?:https?:\/\/)?(?:www\.)?(?!linkedin\.com|github\.com)[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s|,;]*)?/i)?.[0];
+  return compactObject({ email, phone, linkedin, github, website });
+}
+
+function normalizeResumeData(data: Partial<ResumeData> | null | undefined, sourceText = ""): ResumeData {
+  const contact = { ...extractContactFromText(sourceText), ...compactObject(data?.contact || {}) } as ResumeData["contact"];
+  return {
+    contact: {
+      name: contact.name || "Your Name",
+      email: contact.email || "",
+      phone: contact.phone || "",
+      location: contact.location,
+      linkedin: contact.linkedin,
+      github: contact.github,
+      telegram: contact.telegram,
+      website: contact.website,
+      portfolio: contact.portfolio,
+    },
+    summary: data?.summary || "",
+    education: asArray<ResumeData["education"][number]>(data?.education),
+    skills: asArray<string>(data?.skills),
+    tools: asArray<string>(data?.tools),
+    experience: asArray<ResumeData["experience"][number]>(data?.experience),
+    projects: asArray<ResumeData["projects"][number]>(data?.projects),
+    certifications: asArray<string>(data?.certifications),
+    total_years_experience: data?.total_years_experience,
+    quantified_metrics: asArray<string>(data?.quantified_metrics),
+    languages: asArray<string>(data?.languages),
+    interests: asArray<string>(data?.interests),
+    changes_made: asArray<ChangeItem>(data?.changes_made),
+  };
+}
+
 export function parseOptimizedPayload(raw: string): { text: string; structured: ResumeData } | null {
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === "object" && p.structured) return { text: p.text || "", structured: p.structured };
+    if (p && typeof p === "object" && p.structured) return { text: p.text || "", structured: normalizeResumeData(p.structured, p.text || "") };
   } catch { /* legacy */ }
   return null;
 }
@@ -57,6 +101,8 @@ function contactBits(c: ResumeData["contact"]): string[] {
   if (c.linkedin) p.push(esc(c.linkedin));
   if (c.github) p.push(esc(c.github));
   if (c.telegram) p.push(esc(c.telegram));
+  if (c.website) p.push(esc(c.website));
+  if (c.portfolio) p.push(esc(c.portfolio));
   return p;
 }
 
