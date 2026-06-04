@@ -26,8 +26,8 @@ export interface ResumeData {
 
 const asArray = <T,>(value: unknown): T[] => Array.isArray(value) ? value.filter(Boolean) as T[] : [];
 
-function compactObject<T extends Record<string, unknown>>(value: T): Partial<T> {
-  return Object.fromEntries(Object.entries(value || {}).filter(([, v]) => String(v ?? "").trim().length > 0)) as Partial<T>;
+function compactObject(value: Record<string, unknown> | null | undefined): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value || {}).filter(([, v]) => String(v ?? "").trim().length > 0));
 }
 
 function extractContactFromText(text: string): Partial<ResumeData["contact"]> {
@@ -37,7 +37,7 @@ function extractContactFromText(text: string): Partial<ResumeData["contact"]> {
   const linkedin = text.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/[^\s|,;]+/i)?.[0];
   const github = text.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[^\s|,;]+/i)?.[0];
   const website = text.match(/(?:https?:\/\/)?(?:www\.)?(?!linkedin\.com|github\.com)[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s|,;]*)?/i)?.[0];
-  return compactObject({ name: firstLine, email, phone, linkedin, github, website });
+  return compactObject({ name: firstLine, email, phone, linkedin, github, website }) as Partial<ResumeData["contact"]>;
 }
 
 function extractLanguagesFromText(text: string): string[] {
@@ -70,7 +70,7 @@ function mergeByKey<T>(fallback: T[], primary: T[], keyFn: (item: T) => string):
 }
 
 function normalizeResumeData(data: Partial<ResumeData> | null | undefined, sourceText = ""): ResumeData {
-  const contact = { ...extractContactFromText(sourceText), ...compactObject(data?.contact || {}) } as ResumeData["contact"];
+  const contact = { ...extractContactFromText(sourceText), ...compactObject(data?.contact as Record<string, unknown> | undefined) } as ResumeData["contact"];
   return {
     contact: {
       name: contact.name || "Your Name",
@@ -103,7 +103,7 @@ export function hydrateResumeData(data: Partial<ResumeData> | null | undefined, 
   const original = normalizeResumeData(fallback, sourceText);
   return {
     ...primary,
-    contact: { ...original.contact, ...compactObject(primary.contact) } as ResumeData["contact"],
+    contact: { ...original.contact, ...compactObject(primary.contact as unknown as Record<string, unknown>) } as ResumeData["contact"],
     education: mergeByKey(original.education, primary.education, (e) => `${e.degree}|${e.institution}|${e.year}`),
     skills: uniqueStrings([original.skills, primary.skills]),
     tools: uniqueStrings([original.tools, primary.tools]),
