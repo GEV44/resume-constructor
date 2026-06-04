@@ -572,7 +572,7 @@ function renderHtml(template: ResumeTemplate, data: ResumeData): string {
 }
 
 function fallbackDataFromText(text: string): ResumeData {
-  return { contact: { name: "Resume", email: "", phone: "" }, summary: text.slice(0, 600), education: [], skills: [], tools: [], experience: [], projects: [], certifications: [] };
+  return hydrateResumeData({ contact: { name: "Resume", email: "", phone: "" }, summary: text }, text);
 }
 
 export async function downloadResumePDF(plainText: string, data: ResumeData | null, template: ResumeTemplate, filename: string): Promise<void> {
