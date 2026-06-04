@@ -36,7 +36,8 @@ function extractContactFromText(text: string): Partial<ResumeData["contact"]> {
   const phone = text.match(/(?:\+?\d[\d\s().-]{7,}\d)/)?.[0]?.trim();
   const linkedin = text.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/[^\s|,;]+/i)?.[0];
   const github = text.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[^\s|,;]+/i)?.[0];
-  const website = text.match(/(?:https?:\/\/)?(?:www\.)?(?!linkedin\.com|github\.com)[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s|,;]*)?/i)?.[0];
+  const website = Array.from(text.matchAll(/(?:https?:\/\/)?(?:www\.)?(?!linkedin\.com|github\.com)[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s|,;]*)?/gi))
+    .find((match) => text[Math.max(0, match.index! - 1)] !== "@")?.[0];
   return compactObject({ name: firstLine, email, phone, linkedin, github, website }) as Partial<ResumeData["contact"]>;
 }
 
