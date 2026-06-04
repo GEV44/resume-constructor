@@ -69,6 +69,28 @@ function mergeByKey<T>(fallback: T[], primary: T[], keyFn: (item: T) => string):
   return Array.from(map.values());
 }
 
+function mergeExperience(fallback: ResumeData["experience"], primary: ResumeData["experience"]): ResumeData["experience"] {
+  const map = new Map<string, ResumeData["experience"][number]>();
+  fallback.forEach((item) => map.set(`${item.role}|${item.company}|${item.duration}`.toLowerCase(), item));
+  primary.forEach((item) => {
+    const key = `${item.role}|${item.company}|${item.duration}`.toLowerCase();
+    const previous = map.get(key);
+    map.set(key, { ...previous, ...item, responsibilities: uniqueStrings([previous?.responsibilities, item.responsibilities]) });
+  });
+  return Array.from(map.values());
+}
+
+function mergeProjects(fallback: ResumeData["projects"], primary: ResumeData["projects"]): ResumeData["projects"] {
+  const map = new Map<string, ResumeData["projects"][number]>();
+  fallback.forEach((item) => map.set((item.name || item.description).toLowerCase(), item));
+  primary.forEach((item) => {
+    const key = (item.name || item.description).toLowerCase();
+    const previous = map.get(key);
+    map.set(key, { ...previous, ...item, technologies: uniqueStrings([previous?.technologies, item.technologies]) });
+  });
+  return Array.from(map.values());
+}
+
 function normalizeResumeData(data: Partial<ResumeData> | null | undefined, sourceText = ""): ResumeData {
   const contact = { ...extractContactFromText(sourceText), ...compactObject(data?.contact as Record<string, unknown> | undefined) } as ResumeData["contact"];
   return {
@@ -107,8 +129,8 @@ export function hydrateResumeData(data: Partial<ResumeData> | null | undefined, 
     education: mergeByKey(original.education, primary.education, (e) => `${e.degree}|${e.institution}|${e.year}`),
     skills: uniqueStrings([original.skills, primary.skills]),
     tools: uniqueStrings([original.tools, primary.tools]),
-    experience: mergeByKey(original.experience, primary.experience, (e) => `${e.role}|${e.company}|${e.duration}`),
-    projects: mergeByKey(original.projects, primary.projects, (p) => p.name || p.description),
+    experience: mergeExperience(original.experience, primary.experience),
+    projects: mergeProjects(original.projects, primary.projects),
     certifications: uniqueStrings([original.certifications, primary.certifications]),
     quantified_metrics: uniqueStrings([original.quantified_metrics, primary.quantified_metrics]),
     languages: uniqueStrings([original.languages, primary.languages]),
