@@ -1,24 +1,50 @@
 @echo off
-cd /d c:\Users\Gevorg\resume-constructor
-set LOG=push-result.txt
-echo START %date% %time% > %LOG%
+title Deploy AI Resume Builder — Official Site
+cd /d "%~dp0"
 
-echo Step 1: stage >> %LOG%
-git config core.hooksPath .githooks >> %LOG% 2>&1
-git add . >> %LOG% 2>&1
-git reset HEAD .env >> %LOG% 2>&1
-git status --short >> %LOG% 2>&1
+echo.
+echo Official site: https://resume-constructor-gev44.vercel.app
+echo.
 
-echo Step 2: amend >> %LOG%
-git -c user.name=GEV44 -c user.email=gev220705@gmail.com commit --amend -m "docs: clean README for GitHub, author GEV44" >> %LOG% 2>&1
+where node >nul 2>&1
+if errorlevel 1 (
+  echo ERROR: Node.js not found. Install from https://nodejs.org
+  pause
+  exit /b 1
+)
 
-echo Step 3: push >> %LOG%
-git push --force-with-lease origin main >> %LOG% 2>&1
-if errorlevel 1 git push --force origin main >> %LOG% 2>&1
+echo [1/4] Installing dependencies...
+call npm install
+if errorlevel 1 pause & exit /b 1
 
-echo Step 4: verify >> %LOG%
-git log -1 --format=fuller >> %LOG% 2>&1
-git log -1 --format=%%B >> %LOG% 2>&1
+echo.
+echo [2/4] Vercel login (browser opens — sign in with GitHub)...
+call npx vercel login
+if errorlevel 1 pause & exit /b 1
 
-echo DONE %date% %time% >> %LOG%
-type %LOG%
+echo.
+echo [3/4] Link project as resume-constructor-gev44...
+if not exist .vercel (
+  call npx vercel link --yes --project resume-constructor-gev44 2>nul
+  if errorlevel 1 call npx vercel link
+)
+
+echo.
+echo [4/4] Build and deploy to production...
+set VITE_SITE_URL=https://resume-constructor-gev44.vercel.app
+call npm run build
+if errorlevel 1 pause & exit /b 1
+
+call npx vercel --prod --yes
+if errorlevel 1 pause & exit /b 1
+
+echo.
+echo ============================================
+echo   DONE — Your official site is live at:
+echo   https://resume-constructor-gev44.vercel.app
+echo ============================================
+echo.
+echo Set GitHub repo About -^> Website to that URL.
+echo Google Search Console -^> submit /sitemap.xml
+echo.
+pause
