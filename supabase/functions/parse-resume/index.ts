@@ -69,7 +69,9 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a resume parser. Extract structured data from the resume document. Return ONLY valid JSON with this exact structure:
+            content: `Today is June 2026. Use 2025–2026 resume and job market standards. Do not reference 2024 as the current year.
+
+You are a resume parser. Extract structured data from the resume document. Return ONLY valid JSON with this exact structure:
 {
   "contact": {"name": "", "email": "", "phone": ""},
   "education": [{"degree": "", "institution": "", "year": "", "field": ""}],

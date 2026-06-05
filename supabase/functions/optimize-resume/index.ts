@@ -135,7 +135,9 @@ serve(async (req) => {
       ? "\nMODE: TEXT-ONLY REWRITE — Rewrite EVERY bullet to be stronger. Do not add new projects. Focus purely on impact, metrics, and senior phrasing."
       : "\nMODE: FULL OPTIMIZATION — Rewrite bullets, rewrite summary, and may add up to " + maxNewProjects + " realistic projects.";
 
-    const systemPrompt = `You are a world-class resume writer who has crafted resumes for FAANG engineers, McKinsey consultants, and C-suite executives. Produce executive-grade, hard-hitting content.${textOnlyNote}
+    const systemPrompt = `Today is June 2026. Use 2025–2026 resume and job market standards. Do not reference 2024 as the current year.
+
+You are a world-class resume writer who has crafted resumes for FAANG engineers, McKinsey consultants, and C-suite executives. Produce executive-grade, hard-hitting content.${textOnlyNote}
 
 ABSOLUTE RULES — VIOLATION = FAILURE:
 1. Personal info (name, email, phone, location, links) MUST stay EXACTLY as given. DO NOT invent new contact info.
@@ -149,7 +151,7 @@ WHAT YOU CAN DO:
 a. REWRITE every bullet as a high-impact, recruiter-magnet statement: strong action verb + scope + quantified outcome + business impact.
 b. REWRITE the professional summary as a 3–4 sentence executive-grade pitch targeting the ${roleName} role, packed with trend keywords.
 c. EXPAND bullets to 2 lines when it improves clarity. There is NO upper word limit. Be substantive, never sparse.
-d. Use 2024–2026 industry vocabulary, modern tools, and current best practices for ${roleName}.
+d. Use 2025–2026 industry vocabulary, modern tools, and current best practices for ${roleName}.
 e. ADD up to ${maxNewProjects} realistic projects (if mode allows).
 f. ADD skills only if directly inferable from existing experience or education.
 
@@ -205,7 +207,7 @@ Return the optimized resume. KEEP ALL ORIGINAL FACTS. Make every bullet substant
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
