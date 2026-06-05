@@ -1,13 +1,15 @@
 # AI Resume Builder
 
-> AI-powered resume analysis and optimization. Upload a resume, get a deterministic score for any of 30+ job roles, and receive AI-improved versions that never invent fake experience.
+> AI-powered resume analysis and optimization. Upload a resume, get a deterministic score for any of 36 job roles, and download AI-improved PDFs in 10 professional templates.
+
+Site: https://resume-constructor.vercel.app
 
 ## Pages
 
-- [Home](/): Product overview, features, and getting started.
-- [Sign Up](/signup): Create a free account to start analyzing resumes.
-- [Log In](/login): Sign in to an existing account.
+- [Home](https://resume-constructor.vercel.app/): Product overview, features, and getting started.
+- [Sign Up](https://resume-constructor.vercel.app/signup): Create a free account to start analyzing resumes.
+- [Log In](https://resume-constructor.vercel.app/login): Sign in to an existing account.
 
 ## Optional
 
-- [Privacy](/): Data is private and row-level secured per user.
+- [Privacy](https://resume-constructor.vercel.app/): Data is private and row-level secured per user.

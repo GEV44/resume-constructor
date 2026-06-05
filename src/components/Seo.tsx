@@ -7,8 +7,7 @@ interface SeoProps {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const SITE_URL = "https://skill-fortune-predictor.lovable.app";
-const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+import { OG_IMAGE, SITE_URL } from "@/lib/site";
 
 export default function Seo({ title, description, path, jsonLd }: SeoProps) {
   const url = `${SITE_URL}${path}`;

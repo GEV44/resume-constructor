@@ -5,12 +5,13 @@ import {
   Briefcase, GraduationCap, Star, ArrowRight, Zap, User, FileCheck, Github,
 } from "lucide-react";
 import Seo from "@/components/Seo";
+import { SITE_URL } from "@/lib/site";
 
 const features = [
   { icon: FileText, title: "Smart Resume Parsing", desc: "Upload PDF or DOCX — our AI extracts and structures your resume data automatically." },
   { icon: BarChart3, title: "Deterministic Scoring", desc: "Same resume + same role = identical score every time. No randomness, pure analysis." },
   { icon: Sparkles, title: "AI Optimization", desc: "Enhance your resume with better wording, ATS keywords, and impact metrics — never fake data." },
-  { icon: Target, title: "30+ Job Roles", desc: "Tailored scoring for Tech, Business, Finance, HR, and Design roles." },
+  { icon: Target, title: "36 Job Roles", desc: "Tailored scoring for Tech, Business, Finance, HR, and Design roles." },
   { icon: TrendingUp, title: "Track Progress", desc: "Compare scores over time and see exactly how your improvements translate to results." },
   { icon: Shield, title: "Private & Secure", desc: "Your data stays yours. End-to-end encryption, row-level security, no data sharing." },
 ];
@@ -21,21 +22,21 @@ export default function Landing() {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "AI Resume Builder",
-      url: "https://skill-fortune-predictor.lovable.app/",
-      description: "AI-powered resume analysis and optimization with deterministic scoring across 30+ job roles.",
+      url: `${SITE_URL}/`,
+      description: "AI-powered resume analysis and optimization with deterministic scoring across 36 job roles.",
     },
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       name: "AI Resume Builder",
-      url: "https://skill-fortune-predictor.lovable.app/",
+      url: `${SITE_URL}/`,
     },
   ];
   return (
     <div className="min-h-screen bg-animated-gradient">
       <Seo
         title="AI Resume Builder — Score & Optimize Your Resume"
-        description="Upload your resume, get a deterministic ATS score for 30+ job roles, and let AI optimize it without inventing fake experience."
+        description="Upload your resume, get a deterministic ATS score for 36 job roles, and let AI optimize it without inventing fake experience."
         path="/"
         jsonLd={jsonLd}
       />
@@ -141,7 +142,7 @@ export default function Landing() {
             </div>
 
             <p className="text-muted-foreground text-xs mt-6 font-mono">
-              ✓ No credit card required &nbsp; ✓ 30+ job roles &nbsp; ✓ Deterministic scoring
+              ✓ No credit card required &nbsp; ✓ 36 job roles &nbsp; ✓ Deterministic scoring
             </p>
           </motion.div>
 
@@ -248,10 +249,10 @@ export default function Landing() {
       <section className="px-4 pb-8">
         <div className="container mx-auto glass rounded-2xl px-8 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
-            { value: "30+", label: "Job Roles" },
+            { value: "36", label: "Job Roles" },
             { value: "100%", label: "ATS Friendly" },
             { value: "0", label: "Hallucinations" },
-            { value: "5s", label: "Avg. Analysis" },
+            { value: "10", label: "PDF Templates" },
           ].map((s) => (
             <div key={s.label}>
               <p className="font-heading font-black text-2xl md:text-3xl gradient-text">{s.value}</p>

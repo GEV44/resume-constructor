@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://skill-fortune-predictor.lovable.app/sitemap.xml
+Sitemap: https://resume-constructor.vercel.app/sitemap.xml

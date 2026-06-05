@@ -1,42 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/</loc>
+    <loc>https://resume-constructor.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/login</loc>
+    <loc>https://resume-constructor.vercel.app/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/signup</loc>
+    <loc>https://resume-constructor.vercel.app/signup</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/dashboard</loc>
+    <loc>https://resume-constructor.vercel.app/dashboard</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/dashboard/upload</loc>
+    <loc>https://resume-constructor.vercel.app/dashboard/upload</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/dashboard/analyses</loc>
+    <loc>https://resume-constructor.vercel.app/dashboard/analyses</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/dashboard/optimizations</loc>
+    <loc>https://resume-constructor.vercel.app/dashboard/optimizations</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://skill-fortune-predictor.lovable.app/dashboard/profile</loc>
+    <loc>https://resume-constructor.vercel.app/dashboard/profile</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>

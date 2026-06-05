@@ -47,7 +47,7 @@ export default function Signup() {
     <main className="min-h-screen bg-animated-gradient flex items-center justify-center px-4">
       <Seo
         title="Sign Up — AI Resume Builder"
-        description="Create a free AI Resume Builder account to score and optimize your resume for 30+ job roles."
+        description="Create a free AI Resume Builder account to score and optimize your resume for 36 job roles."
         path="/signup"
       />
       <div className="glass rounded-3xl p-8 md:p-10 w-full max-w-md">
