@@ -90,7 +90,7 @@ export default function AdminDashboard() {
       setRecentUploads(resumes.data || []);
       setRecentAnalyses(allAnalyses.slice(0, 10));
     } catch (err) {
-      console.error("Admin fetch error:", err);
+      if (import.meta.env.DEV) console.error(err);
       toast.error("Failed to load admin data.");
     } finally {
       setLoading(false);

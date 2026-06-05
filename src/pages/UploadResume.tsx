@@ -186,7 +186,7 @@ export default function UploadResume() {
         },
       });
     } catch (err: any) {
-      console.error("Resume analysis error:", err);
+      if (import.meta.env.DEV) console.error(err);
       toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);

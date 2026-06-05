@@ -123,7 +123,7 @@ export default function AnalysisResult() {
       toast.success(`Optimized! Score improved from ${data.before_score}% to ${data.after_score}%`);
       navigate("/dashboard/optimizations");
     } catch (err: any) {
-      console.error("Optimization error:", err);
+      if (import.meta.env.DEV) console.error(err);
       toast.error(err.message || "Optimization failed. Please try again.");
     } finally {
       setOptimizing(false);

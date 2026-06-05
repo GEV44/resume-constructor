@@ -1,73 +1,95 @@
-# Welcome to your Lovable project
+# 🤖 AI Resume Builder
 
-## Project info
+> Multi-agent AI that scores, optimizes, and builds  
+> professional resumes in seconds.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Online-6366f1?style=for-the-badge)](https://resume-constructor.lovable.app)
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=for-the-badge&logo=vercel)](https://resume-constructor.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-GEV44-181717?style=for-the-badge&logo=github)](https://github.com/GEV44)
 
-## How can I edit this code?
+## 🌐 Live Demos
+- Lovable: https://resume-constructor.lovable.app  
+- Vercel:  https://resume-constructor.vercel.app
 
-There are several ways of editing your application.
+## ✨ Features
 
-**Use Lovable**
+| Feature | Description |
+|---|---|
+| 🎯 AI Scoring | Analyze resume against 30+ job roles |
+| 🤖 Multi-Agent AI | 5 agents each handle one resume section |
+| 📋 4 Templates | Executive, Tech Sidebar, Minimal, Bold Header |
+| ⚡ ATS Optimizer | Real-time keyword scoring and gap analysis |
+| 🎯 Job Tailoring | Paste job description, get a match score |
+| 📄 PDF Export | Multi-page pixel-perfect PDF download |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 🛠 Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
+- **AI**: Anthropic Claude API (claude-haiku-3-5-20251001)
+- **PDF**: html2canvas + jsPDF
+- **Icons**: lucide-react
+- **Dev Platform**: Lovable
+- **Deployment**: Vercel (free tier)
 
-**Use your preferred IDE**
+## 🚀 Run Locally
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
+- Node.js 18+
+- Free Anthropic API key → console.anthropic.com
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### Setup
+```bash
+git clone https://github.com/GEV44/resume-constructor.git
+cd resume-constructor
+npm install
+cp .env.example .env
 ```
 
-**Edit a file directly in GitHub**
+Add your key to .env:
+```
+VITE_ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run dev
+# Opens at http://localhost:5173
+```
 
-**Use GitHub Codespaces**
+### Build for Production
+```bash
+npm run build
+npm run preview
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📁 Project Structure
 
-## What technologies are used for this project?
+```
+src/
+├── components/
+│   ├── templates/
+│   │   ├── ExecutiveTemplate.tsx
+│   │   ├── TechSidebarTemplate.tsx
+│   │   ├── MinimalProTemplate.tsx
+│   │   ├── BoldHeaderTemplate.tsx
+│   │   └── TextOnlyTemplate.tsx
+│   ├── ResumeBuilder.tsx
+│   ├── ResumeScorer.tsx
+│   ├── JobTailoring.tsx
+│   └── LandingPage.tsx
+├── lib/
+│   ├── resume-pdf.ts
+│   └── claude-agents.ts
+└── types/
+    └── resume.ts
+```
 
-This project is built with:
+## 👤 Author
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+**Gevorg Hovhannisyan** — Data Scientist & ML Engineer  
+📍 Yerevan, Armenia  
+🔗 [LinkedIn](https://linkedin.com/in/gevorg-hovhannisyan) | 
+   [GitHub](https://github.com/GEV44)
 
-## How can I deploy this project?
+## 📄 License
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT — free to use and modify
