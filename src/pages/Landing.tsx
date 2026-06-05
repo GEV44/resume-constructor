@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
-  Briefcase, GraduationCap, Star, ArrowRight, User, Github,
+  ArrowRight, Github,
   PenLine, LayoutTemplate,
 } from "lucide-react";
 import Seo from "@/components/Seo";
@@ -157,110 +157,21 @@ export default function Landing() {
             </div>
           </motion.div>
 
-          {/* RIGHT — glass resume mock */}
+          {/* RIGHT — hero image */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative hidden lg:block"
+            className="relative hidden lg:flex items-center justify-center"
           >
-            <div className="absolute -inset-8 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent blur-3xl" />
-
-            {/* Back card */}
-            <div className="absolute top-6 left-6 right-0 bottom-0 glass rounded-3xl border border-white/5 opacity-40" />
-
-            {/* Front card */}
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="relative glass rounded-3xl p-8 border border-white/10 shadow-2xl shadow-primary/20"
-            >
-              {/* Sparkle badge */}
-              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-accent/40">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-
-              {/* Header */}
-              <div className="flex items-center gap-4 mb-7 pb-6 border-b border-white/10">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <User className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-2.5 w-32 rounded-full bg-gradient-to-r from-foreground/60 to-foreground/20" />
-                  <div className="h-2 w-24 rounded-full bg-foreground/15" />
-                </div>
-              </div>
-
-              {/* Sections */}
-              {[
-                { icon: Briefcase, label: "EXPERIENCE" },
-                { icon: GraduationCap, label: "EDUCATION" },
-                { icon: Star, label: "SKILLS" },
-              ].map((s) => (
-                <div key={s.label} className="mb-6 last:mb-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center">
-                      <s.icon className="w-4 h-4 text-accent" />
-                    </div>
-                    <span className="font-mono text-[11px] font-bold tracking-[0.15em] text-foreground/80">
-                      {s.label}
-                    </span>
-                  </div>
-                  {s.label === "SKILLS" ? (
-                    <div className="flex gap-2 pl-12">
-                      {[14, 18, 12, 16, 14].map((w, i) => (
-                        <div key={i} className={`h-2 rounded-full bg-gradient-to-r from-primary/60 to-accent/60`} style={{ width: `${w * 4}px` }} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="pl-12 space-y-1.5">
-                      <div className="h-1.5 w-full rounded-full bg-foreground/15" />
-                      <div className="h-1.5 w-4/5 rounded-full bg-foreground/10" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </motion.div>
-
-            {/* Floating ATS score card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              className="absolute -bottom-6 -left-8 z-20 glass rounded-2xl border border-white/15 p-4 pr-5 shadow-2xl shadow-accent/20 flex items-center gap-3"
-            >
-              <div className="relative w-14 h-14">
-                <svg className="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke="url(#scoreGrad)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeDasharray="100.5"
-                    strokeDashoffset="8"
-                  />
-                  <defs>
-                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--accent))" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center font-heading font-black text-base">
-                  92
-                </span>
-              </div>
-              <div>
-                <p className="font-heading font-bold text-sm leading-tight">ATS Score</p>
-                <p className="text-[11px] text-accent font-mono flex items-center gap-1 mt-0.5">
-                  <TrendingUp className="w-3 h-3" /> Excellent match
-                </p>
-              </div>
-            </motion.div>
+            <div className="absolute -inset-12 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent blur-3xl pointer-events-none" />
+            <motion.img
+              src="/og-image.jpg"
+              alt="AI Resume Builder — Build Resumes That Get Noticed"
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+              className="relative w-full max-w-[540px] rounded-3xl shadow-2xl shadow-primary/30 border border-white/10"
+            />
           </motion.div>
         </div>
       </section>
