@@ -187,40 +187,43 @@ export default function Landing() {
               </p>
             </motion.div>
 
-            {/* RIGHT — og-image: show only the 3-D card (right half of image) */}
+            {/* RIGHT — 3D card from og-image, precisely cropped */}
             <motion.div
               initial={{ opacity: 0, x: 48 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.85, delay: 0.18, ease: "easeOut" }}
               className="relative hidden lg:flex items-center justify-end"
             >
-              {/* Glow */}
-              <div className="absolute -right-10 top-1/2 -translate-y-1/2 w-[460px] h-[460px] rounded-full bg-primary/20 blur-[110px] pointer-events-none" />
+              {/* Ambient glow */}
+              <div className="absolute -right-10 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] pointer-events-none" />
 
+              {/*
+                Crop technique: portrait container (taller than image aspect ratio)
+                + background-size:cover + background-position:right center
+                forces CSS to scale the image by HEIGHT and anchor it to the right,
+                revealing only the rightmost ~45% (the 3D card).
+                At 500×575px: bg scales to ~1095×575, right-anchored →
+                visible window starts at original x≈650 (pure card, no text).
+              */}
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
                 className="relative overflow-hidden rounded-3xl shadow-2xl shadow-primary/40 border border-white/10 w-full"
-                style={{ maxWidth: "500px", aspectRatio: "1 / 0.96" }}
+                style={{
+                  maxWidth: "500px",
+                  aspectRatio: "1 / 1.15",
+                  backgroundImage: "url(/og-image.jpg)",
+                  backgroundSize: "cover",
+                  backgroundPosition: "right center",
+                  backgroundRepeat: "no-repeat",
+                }}
               >
-                {/*
-                  width:200% makes the image 2× the container width, right-anchored.
-                  This reveals exactly the right half of the og-image (the 3D card),
-                  hiding all text that lives in the left half.
-                */}
-                <img
-                  src="/og-image.jpg"
-                  alt="AI Resume Builder 3D card preview"
-                  className="absolute top-1/2 -translate-y-1/2 select-none pointer-events-none"
-                  style={{ right: 0, width: "200%" }}
-                  draggable={false}
-                />
-                {/* Left-edge gradient — blends crop edge into page background */}
+                {/* Left-edge gradient blend — eases card into the dark page bg */}
                 <div
                   className="absolute inset-0 pointer-events-none"
                   style={{
                     background:
-                      "linear-gradient(to right, hsl(230 55% 6%) 0%, hsl(230 55% 6% / 0.85) 18%, hsl(230 55% 6% / 0.3) 45%, transparent 70%)",
+                      "linear-gradient(to right, hsl(230 55% 6%) 0%, hsl(230 55% 6% / 0.75) 22%, hsl(230 55% 6% / 0.1) 52%, transparent 72%)",
                   }}
                 />
               </motion.div>
