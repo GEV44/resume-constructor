@@ -108,9 +108,9 @@ export default function Landing() {
               AI-Powered Resume Intelligence
             </div>
 
-            <h1 className="font-heading font-black leading-[0.95] tracking-tight text-5xl md:text-6xl lg:text-7xl mb-6">
+            <h1 className="font-heading font-black leading-[0.98] tracking-tight text-5xl md:text-6xl lg:text-7xl mb-6">
               Build Resumes That{" "}
-              <span className="gradient-text">Get Noticed</span>
+              <span className="gradient-text whitespace-nowrap">Get Noticed</span>
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl mb-9 leading-relaxed">
@@ -224,6 +224,46 @@ export default function Landing() {
                   )}
                 </div>
               ))}
+            </motion.div>
+
+            {/* Floating ATS score card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="absolute -bottom-6 -left-8 z-20 glass rounded-2xl border border-white/15 p-4 pr-5 shadow-2xl shadow-accent/20 flex items-center gap-3"
+            >
+              <div className="relative w-14 h-14">
+                <svg className="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="16" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="16"
+                    fill="none"
+                    stroke="url(#scoreGrad)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeDasharray="100.5"
+                    strokeDashoffset="8"
+                  />
+                  <defs>
+                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" />
+                      <stop offset="100%" stopColor="hsl(var(--accent))" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center font-heading font-black text-base">
+                  92
+                </span>
+              </div>
+              <div>
+                <p className="font-heading font-bold text-sm leading-tight">ATS Score</p>
+                <p className="text-[11px] text-accent font-mono flex items-center gap-1 mt-0.5">
+                  <TrendingUp className="w-3 h-3" /> Excellent match
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         </div>
