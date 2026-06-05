@@ -1,92 +1,94 @@
-# 🤖 AI Resume Builder
+# AI Resume Builder
 
-> Free AI resume constructor — ATS scores for 36 job roles, AI optimization, and 10 PDF templates.
+> Upload a resume, get a deterministic ATS score for 36 job roles, let AI sharpen the wording, and export a polished PDF in any of 10 professional templates.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-resume--constructor--gev44.vercel.app-6366f1?style=for-the-badge)](https://resume-constructor-gev44.vercel.app)
-[![GitHub](https://img.shields.io/badge/GitHub-GEV44-181717?style=for-the-badge&logo=github)](https://github.com/GEV44/resume-constructor)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-resume--constructor--gev44.vercel.app-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://resume-constructor-gev44.vercel.app)
+[![GitHub](https://img.shields.io/badge/Source-GEV44-181717?style=for-the-badge&logo=github)](https://github.com/GEV44/resume-constructor)
+[![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
-## 🌐 Live Site
+**Live site → https://resume-constructor-gev44.vercel.app**
 
-**https://resume-constructor-gev44.vercel.app**
+---
 
-> Run `deploy-vercel.bat` once to deploy (free Vercel). The URL contains **"resume-constructor"** — good for Google search.
+## Overview
 
-## ✨ Features
+AI Resume Builder is a full-stack web application that helps job seekers measure and improve their resumes objectively. A user uploads a PDF or DOCX file; the app parses it into structured data, scores it against a chosen job role using a **deterministic** scoring engine (same input always yields the same score — no randomness), and offers AI-generated optimizations that improve wording and keyword coverage **without inventing experience**. The result can be exported as a print-ready PDF in ten distinct templates.
+
+## Features
 
 | Feature | Description |
 |---|---|
-| 🎯 ATS Scoring | Deterministic score against **36 job roles** (Tech, Business, Finance, HR, Design) |
-| 🤖 AI Optimization | Google Gemini via Lovable AI Gateway — better wording & keywords, never fake experience |
-| 📋 **10 PDF Templates** | ATS Plain, Executive, Modern, Minimal, Creative, Tech, Elegant, Bold, Editorial, Compact |
-| ⚡ Resume Parsing | Upload PDF/DOCX — AI extracts contact, experience, skills, education |
-| 📊 Progress Tracking | Compare scores over time and review every AI change |
-| 📄 PDF Export | Pixel-perfect multi-page PDF download for any template |
-| 🔒 Private & Secure | Supabase auth, row-level security, your data stays yours |
+| Resume parsing | Upload PDF/DOCX — AI extracts contact details, experience, skills, and education into structured data |
+| Deterministic ATS scoring | Transparent, repeatable score across **36 job roles** in Tech, Business, Finance, HR, and Design |
+| AI optimization | Improves phrasing, impact metrics, and ATS keywords — never fabricates roles or dates |
+| 10 PDF templates | ATS Plain, Executive, Modern, Minimal, Creative, Tech, Elegant, Bold, Editorial, Compact |
+| Progress tracking | Compare scores over time and review every individual change the AI suggested |
+| PDF export | Pixel-accurate, multi-page PDF download for any template |
+| Auth & privacy | Supabase authentication with row-level security — each user only sees their own data |
 
-## 🛠 Tech Stack
+## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite, shadcn/ui
-- **Backend**: Supabase (Auth, Database, Edge Functions)
-- **AI**: Google Gemini Flash via Lovable AI Gateway
-- **PDF**: html2canvas + jsPDF (10 built-in HTML templates in `resume-pdf.ts`)
-- **Icons**: lucide-react
-- **Deploy**: Vercel (free)
+| Layer | Technologies |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion |
+| Backend | Supabase (Auth, Postgres, Edge Functions) |
+| AI | Google Gemini Flash via the Lovable AI Gateway |
+| PDF engine | html2canvas + jsPDF (10 HTML templates rendered in `resume-pdf.ts`) |
+| Hosting | Vercel |
 
-## 🚀 Deploy (Free — One Click)
+## Run Locally
 
-Double-click **`deploy-vercel.bat`** in the project folder, or:
-
-```bash
-npm install
-npx vercel login          # sign in with GitHub (browser opens once)
-npx vercel --prod --yes   # deploy to production
-```
-
-Set in Vercel Dashboard → Settings → Environment Variables:
-- `VITE_SITE_URL` = `https://resume-constructor-gev44.vercel.app`
-
-Every `git push` to `main` auto-redeploys if GitHub is connected to Vercel.
-
-## 🚀 Run Locally
+**Prerequisites:** Node.js 18+ and a Supabase project for auth and storage.
 
 ```bash
 git clone https://github.com/GEV44/resume-constructor.git
 cd resume-constructor
 npm install
-cp .env.example .env
-npm run dev
-# http://localhost:5173
+cp .env.example .env      # then fill in your Supabase values
+npm run dev               # http://localhost:5173
 ```
 
-## 📁 Project Structure
+Production build:
+
+```bash
+npm run build
+npm run preview
+```
+
+## Project Structure
 
 ```
 src/
-├── pages/              Landing, Dashboard, UploadResume, AnalysisResult, Optimizations
-├── components/         UI (shadcn), Seo, DashboardLayout, ProtectedRoute
-├── lib/
-│   ├── resume-pdf.ts   10 PDF templates + export logic
-│   ├── job-roles.ts    36 role definitions + scoring weights
-│   └── site.ts         Public URL (VITE_SITE_URL)
-supabase/functions/     parse-resume, score-resume, optimize-resume
-scripts/generate-seo.mjs  Builds sitemap.xml + robots.txt at deploy time
+├── pages/            Landing, Login, Signup, Dashboard, UploadResume,
+│                     AnalysisResult, Analyses, Optimizations, Profile, AdminDashboard
+├── components/       Seo, DashboardLayout, ProtectedRoute, ui/ (shadcn components)
+├── contexts/         AuthContext (Supabase session)
+├── integrations/     Supabase client and generated types
+└── lib/
+    ├── resume-pdf.ts 10 PDF templates + export logic
+    ├── job-roles.ts  36 role definitions and scoring weights
+    ├── scoring.ts    deterministic ATS scoring engine
+    └── site.ts       canonical site URL (VITE_SITE_URL)
+supabase/
+└── functions/        parse-resume, score-resume, optimize-resume (edge functions)
+scripts/
+└── generate-seo.mjs  generates sitemap.xml + robots.txt at build time
 ```
 
-## 🔍 Google SEO (Free)
+## Environment Variables
 
-1. Deploy with `deploy-vercel.bat`
-2. [Google Search Console](https://search.google.com/search-console) → add your site → verify
-3. Submit sitemap: `https://resume-constructor-gev44.vercel.app/sitemap.xml`
-4. GitHub repo **About** → set Website to your live URL
+| Variable | Purpose |
+|---|---|
+| `VITE_SITE_URL` | Canonical URL used for SEO, sitemap, and Open Graph tags |
+| `VITE_API_URL` | Optional API base URL override |
 
-Page titles and meta tags include **"Resume Constructor"** and **"AI Resume Builder"** for search visibility.
+Supabase keys are configured in `src/integrations/supabase`.
 
-## 👤 Author
+## Author
 
-**[@GEV44](https://github.com/GEV44)** — Gevorg Hovhannisyan  
-Data Scientist & ML Engineer · Yerevan, Armenia  
-🔗 [LinkedIn](https://linkedin.com/in/gevorg-hovhannisyan)
+**Gevorg Hovhannisyan** — Data Scientist & ML Engineer, Yerevan, Armenia
+[GitHub @GEV44](https://github.com/GEV44) · [LinkedIn](https://linkedin.com/in/gevorg-hovhannisyan)
 
-## 📄 License
+## License
 
-MIT — see [LICENSE](LICENSE)
+Released under the [MIT License](LICENSE).

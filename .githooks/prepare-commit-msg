@@ -1,5 +1,0 @@
-#!/bin/sh
-# Strip Cursor co-author from commit messages (Git for Windows)
-if [ -f "$1" ]; then
-  grep -v 'Co-authored-by: Cursor <cursoragent@cursor.com>' "$1" > "$1.tmp" 2>/dev/null && mv "$1.tmp" "$1"
-fi

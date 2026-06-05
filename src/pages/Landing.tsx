@@ -108,17 +108,16 @@ export default function Landing() {
               AI-Powered Resume Intelligence
             </div>
 
-            <h1 className="font-heading font-black leading-[0.95] tracking-tight text-5xl md:text-7xl lg:text-[5.5rem] mb-6">
-              AI Resume Builder — Score & Optimize Your Resume
+            <h1 className="font-heading font-black leading-[0.95] tracking-tight text-5xl md:text-6xl lg:text-7xl mb-6">
+              Build Resumes That{" "}
+              <span className="gradient-text">Get Noticed</span>
             </h1>
 
-            <div className="h-1 w-32 rounded-full bg-gradient-to-r from-primary via-accent to-primary mb-6" />
-
-            <p className="text-2xl md:text-3xl font-heading font-semibold mb-3">
-              Build Resumes
-            </p>
-            <p className="text-2xl md:text-3xl font-heading font-semibold mb-10">
-              That <span className="gradient-text">Get Noticed</span>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-xl mb-9 leading-relaxed">
+              The AI resume builder that scores your resume against{" "}
+              <span className="text-foreground font-semibold">36 job roles</span>, sharpens
+              every line with AI, and exports a polished PDF in{" "}
+              <span className="text-foreground font-semibold">10 templates</span> — in minutes.
             </p>
 
             {/* Feature pills */}
