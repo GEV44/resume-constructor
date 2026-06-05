@@ -6,9 +6,5 @@
     "env": {
       "VITE_SITE_URL": "https://resume-constructor-gev44.vercel.app"
     }
-  },
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ]
+  }
 }
