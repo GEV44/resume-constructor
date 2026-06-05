@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
-  Briefcase, GraduationCap, Star, ArrowRight, Zap, User, FileCheck,
+  Briefcase, GraduationCap, Star, ArrowRight, Zap, User, FileCheck, Github,
 } from "lucide-react";
 import Seo from "@/components/Seo";
 
@@ -51,6 +51,15 @@ export default function Landing() {
             </span>
           </Link>
           <div className="flex items-center gap-5">
+            <a
+              href="https://github.com/GEV44/resume-constructor"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View source on GitHub"
+              className="text-muted-foreground hover:text-foreground transition-all duration-400"
+            >
+              <Github className="w-5 h-5" />
+            </a>
             <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-all duration-400 hidden sm:inline">
               Log In
             </Link>
@@ -120,9 +129,15 @@ export default function Landing() {
                 Create Your Resume
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-all">
-                Already have an account?
-              </Link>
+              <a
+                href="https://github.com/GEV44/resume-constructor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full px-6 py-4 border border-glass-border text-sm font-bold uppercase tracking-wider hover:bg-white/5 transition-all"
+              >
+                <Github className="w-4 h-4" />
+                View on GitHub
+              </a>
             </div>
 
             <p className="text-muted-foreground text-xs mt-6 font-mono">
@@ -277,9 +292,22 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-glass-border py-12 px-4">
-        <div className="container mx-auto text-center">
-          <p className="font-heading font-bold text-lg mb-1">AI Resume Builder</p>
-          <p className="text-muted-foreground text-sm">Build Resumes That Get Noticed.</p>
+        <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div>
+            <p className="font-heading font-bold text-lg mb-1">AI Resume Builder</p>
+            <p className="text-muted-foreground text-sm">© 2026 · Built by Gevorg Hovhannisyan · Yerevan, Armenia</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/GEV44/resume-constructor"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              className="text-muted-foreground hover:text-foreground transition-all"
+            >
+              <Github className="w-5 h-5" />
+            </a>
+          </div>
         </div>
       </footer>
     </div>
