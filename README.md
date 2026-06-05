@@ -4,12 +4,10 @@
 > professional resumes in seconds.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Online-6366f1?style=for-the-badge)](https://resume-constructor.lovable.app)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=for-the-badge&logo=vercel)](https://resume-constructor.vercel.app)
-[![GitHub](https://img.shields.io/badge/GitHub-GEV44-181717?style=for-the-badge&logo=github)](https://github.com/GEV44)
+[![GitHub](https://img.shields.io/badge/GitHub-GEV44-181717?style=for-the-badge&logo=github)](https://github.com/GEV44/resume-constructor)
 
-## 🌐 Live Demos
-- Lovable: https://resume-constructor.lovable.app  
-- Vercel:  https://resume-constructor.vercel.app
+## 🌐 Live Demo
+- https://resume-constructor.lovable.app
 
 ## ✨ Features
 
@@ -25,17 +23,15 @@
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
-- **AI**: Anthropic Claude API (claude-haiku-3-5-20251001)
+- **AI**: Google Gemini Flash via Lovable AI Gateway
 - **PDF**: html2canvas + jsPDF
 - **Icons**: lucide-react
-- **Dev Platform**: Lovable
-- **Deployment**: Vercel (free tier)
 
 ## 🚀 Run Locally
 
 ### Prerequisites
 - Node.js 18+
-- Free Anthropic API key → console.anthropic.com
+- No API key needed — uses Lovable AI Gateway
 
 ### Setup
 ```bash
@@ -43,11 +39,6 @@ git clone https://github.com/GEV44/resume-constructor.git
 cd resume-constructor
 npm install
 cp .env.example .env
-```
-
-Add your key to .env:
-```
-VITE_ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
 ```bash
@@ -85,10 +76,9 @@ src/
 
 ## 👤 Author
 
-**Gevorg Hovhannisyan** — Data Scientist & ML Engineer  
-📍 Yerevan, Armenia  
-🔗 [LinkedIn](https://linkedin.com/in/gevorg-hovhannisyan) | 
-   [GitHub](https://github.com/GEV44)
+**[@GEV44](https://github.com/GEV44)** — Gevorg Hovhannisyan  
+Data Scientist & ML Engineer · Yerevan, Armenia  
+🔗 [LinkedIn](https://linkedin.com/in/gevorg-hovhannisyan)
 
 ## 📄 License
 
