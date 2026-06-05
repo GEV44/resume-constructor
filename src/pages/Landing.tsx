@@ -187,35 +187,40 @@ export default function Landing() {
               </p>
             </motion.div>
 
-            {/* RIGHT — og-image cropped to show only the 3-D resume card */}
+            {/* RIGHT — og-image: show only the 3-D card (right half of image) */}
             <motion.div
               initial={{ opacity: 0, x: 48 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.85, delay: 0.18, ease: "easeOut" }}
-              className="relative hidden lg:flex items-center justify-center"
+              className="relative hidden lg:flex items-center justify-end"
             >
-              {/* Glow behind card */}
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/25 via-accent/15 to-transparent blur-3xl scale-110 pointer-events-none" />
+              {/* Glow */}
+              <div className="absolute -right-10 top-1/2 -translate-y-1/2 w-[460px] h-[460px] rounded-full bg-primary/20 blur-[110px] pointer-events-none" />
 
-              {/* Crop container — shows only the right (3D card) portion of og-image */}
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
                 className="relative overflow-hidden rounded-3xl shadow-2xl shadow-primary/40 border border-white/10 w-full"
-                style={{ maxWidth: "520px", aspectRatio: "1.1 / 1" }}
+                style={{ maxWidth: "500px", aspectRatio: "1 / 0.96" }}
               >
+                {/*
+                  width:200% makes the image 2× the container width, right-anchored.
+                  This reveals exactly the right half of the og-image (the 3D card),
+                  hiding all text that lives in the left half.
+                */}
                 <img
                   src="/og-image.jpg"
-                  alt="AI Resume Builder — 3D resume card preview"
-                  className="absolute top-0 right-0 h-full w-auto max-w-none select-none"
+                  alt="AI Resume Builder 3D card preview"
+                  className="absolute top-1/2 -translate-y-1/2 select-none pointer-events-none"
+                  style={{ right: 0, width: "200%" }}
                   draggable={false}
                 />
-                {/* Left-edge gradient — hides the text half of og-image, blends with page bg */}
+                {/* Left-edge gradient — blends crop edge into page background */}
                 <div
-                  className="absolute inset-y-0 left-0 w-2/5 pointer-events-none"
+                  className="absolute inset-0 pointer-events-none"
                   style={{
                     background:
-                      "linear-gradient(to right, hsl(230 55% 6%) 0%, hsl(230 55% 6% / 0.85) 40%, transparent 100%)",
+                      "linear-gradient(to right, hsl(230 55% 6%) 0%, hsl(230 55% 6% / 0.85) 18%, hsl(230 55% 6% / 0.3) 45%, transparent 70%)",
                   }}
                 />
               </motion.div>
