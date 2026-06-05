@@ -2,18 +2,18 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
-  Briefcase, GraduationCap, Star, ArrowRight, Zap, User, FileCheck, Github,
+  Briefcase, GraduationCap, Star, ArrowRight, User, Github, CheckCircle2,
 } from "lucide-react";
 import Seo from "@/components/Seo";
 import { SITE_URL } from "@/lib/site";
 
 const features = [
-  { icon: FileText, title: "Smart Resume Parsing", desc: "Upload PDF or DOCX — our AI extracts and structures your resume data automatically." },
-  { icon: BarChart3, title: "Deterministic Scoring", desc: "Same resume + same role = identical score every time. No randomness, pure analysis." },
-  { icon: Sparkles, title: "AI Optimization", desc: "Enhance your resume with better wording, ATS keywords, and impact metrics — never fake data." },
-  { icon: Target, title: "36 Job Roles", desc: "Tailored scoring for Tech, Business, Finance, HR, and Design roles." },
-  { icon: TrendingUp, title: "Track Progress", desc: "Compare scores over time and see exactly how your improvements translate to results." },
-  { icon: Shield, title: "Private & Secure", desc: "Your data stays yours. End-to-end encryption, row-level security, no data sharing." },
+  { icon: FileText, title: "Smart Parsing", desc: "AI structures your PDF or DOCX in seconds." },
+  { icon: BarChart3, title: "Deterministic Scoring", desc: "Same resume, same role, same score — every time." },
+  { icon: Sparkles, title: "AI Optimization", desc: "Sharper wording and ATS keywords, never fabricated." },
+  { icon: Target, title: "36 Job Roles", desc: "Tailored for Tech, Business, Finance, HR, and Design." },
+  { icon: TrendingUp, title: "Track Progress", desc: "Compare scores over time and review every change." },
+  { icon: Shield, title: "Private & Secure", desc: "Row-level security — your data stays yours." },
 ];
 
 export default function Landing() {
@@ -113,35 +113,17 @@ export default function Landing() {
               <span className="gradient-text whitespace-nowrap">Get Noticed</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-xl mb-9 leading-relaxed">
-              The AI resume builder that scores your resume against{" "}
-              <span className="text-foreground font-semibold">36 job roles</span>, sharpens
-              every line with AI, and exports a polished PDF in{" "}
-              <span className="text-foreground font-semibold">10 templates</span> — in minutes.
+            <p className="text-lg text-muted-foreground max-w-md mb-10 leading-relaxed">
+              Score against <span className="text-foreground font-medium">36 roles</span>,
+              optimize with AI, and export in{" "}
+              <span className="text-foreground font-medium">10 polished templates</span>.
             </p>
-
-            {/* Feature pills */}
-            <div className="flex flex-wrap gap-3 mb-10">
-              {[
-                { icon: Sparkles, label: "AI-Powered\nWriting" },
-                { icon: FileCheck, label: "ATS-Friendly\nTemplates" },
-                { icon: TrendingUp, label: "Stand Out &\nGet Hired" },
-              ].map((p) => (
-                <div key={p.label} className="glass rounded-full pl-2 pr-4 py-2 flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                    <p.icon className="w-4 h-4 text-white" />
-                  </span>
-                  <span className="text-xs leading-tight whitespace-pre-line">{p.label}</span>
-                </div>
-              ))}
-            </div>
 
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 to="/signup"
-                className="group inline-flex items-center gap-3 rounded-full px-7 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all"
+                className="group inline-flex items-center gap-3 rounded-full px-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 transition-all"
               >
-                <Sparkles className="w-4 h-4" />
                 Create Your Resume
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -149,16 +131,21 @@ export default function Landing() {
                 href="https://github.com/GEV44/resume-constructor"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full px-6 py-4 border border-glass-border text-sm font-bold uppercase tracking-wider hover:bg-white/5 transition-all"
+                className="inline-flex items-center gap-2 rounded-full px-7 py-4 border border-glass-border text-sm font-bold uppercase tracking-wider hover:bg-white/5 transition-all"
               >
                 <Github className="w-4 h-4" />
-                View on GitHub
+                GitHub
               </a>
             </div>
 
-            <p className="text-muted-foreground text-xs mt-6 font-mono">
-              ✓ No credit card required &nbsp; ✓ 36 job roles &nbsp; ✓ Deterministic scoring
-            </p>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-9 text-xs text-muted-foreground">
+              {["No credit card", "36 job roles", "Deterministic scoring"].map((t) => (
+                <span key={t} className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
+                  {t}
+                </span>
+              ))}
+            </div>
           </motion.div>
 
           {/* RIGHT — glass resume mock */}
@@ -290,9 +277,11 @@ export default function Landing() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
-                <f.icon className="w-10 h-10 text-accent mb-4" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/25 to-accent/20 border border-white/10 flex items-center justify-center mb-5">
+                  <f.icon className="w-6 h-6 text-accent" />
+                </div>
                 <h3 className="font-heading font-bold text-lg mb-2">{f.title}</h3>
-                <p className="text-muted-foreground text-sm">{f.desc}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </div>
