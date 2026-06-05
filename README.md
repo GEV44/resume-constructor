@@ -94,7 +94,7 @@ supabase/functions/   parse-resume · score-resume · optimize-resume
 **Gevorg Hovhannisyan** — Data Scientist & ML Engineer · Yerevan, Armenia
 
 [![GitHub](https://img.shields.io/badge/GitHub-GEV44-181717?style=flat-square&logo=github)](https://github.com/GEV44)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/gevorg-hovhannisyan)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/YOUR-LINKEDIN-URL)
 
 ## 📄 License
 
