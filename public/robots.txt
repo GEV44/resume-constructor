@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://resume-constructor.vercel.app/sitemap.xml
+Sitemap: https://resume-constructor-gev44.vercel.app/sitemap.xml

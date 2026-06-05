@@ -20,6 +20,17 @@ export default function Landing() {
   const jsonLd = [
     {
       "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "AI Resume Builder",
+      alternateName: "Resume Constructor",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: `${SITE_URL}/`,
+      description: "Free AI resume constructor with ATS scoring for 36 job roles and 10 PDF templates.",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+    {
+      "@context": "https://schema.org",
       "@type": "Organization",
       name: "AI Resume Builder",
       url: `${SITE_URL}/`,
@@ -28,15 +39,20 @@ export default function Landing() {
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "AI Resume Builder",
+      name: "Resume Constructor — AI Resume Builder",
       url: `${SITE_URL}/`,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${SITE_URL}/signup`,
+        "query-input": "required name=search_term_string",
+      },
     },
   ];
   return (
     <div className="min-h-screen bg-animated-gradient">
       <Seo
-        title="AI Resume Builder — Score & Optimize Your Resume"
-        description="Upload your resume, get a deterministic ATS score for 36 job roles, and let AI optimize it without inventing fake experience."
+        title="Resume Constructor — AI Resume Builder | ATS Score & 10 PDF Templates"
+        description="Free AI resume constructor: upload your resume, get ATS scores for 36 job roles, and download optimized PDFs in 10 professional templates."
         path="/"
         jsonLd={jsonLd}
       />

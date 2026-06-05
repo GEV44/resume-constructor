@@ -1,13 +1,15 @@
 # 🤖 AI Resume Builder
 
-> Upload your resume, get an ATS score for 36 job roles, and download AI-optimized PDFs in 10 professional templates.
+> Free AI resume constructor — ATS scores for 36 job roles, AI optimization, and 10 PDF templates.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-resume--constructor.vercel.app-6366f1?style=for-the-badge)](https://resume-constructor.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-resume--constructor--gev44.vercel.app-6366f1?style=for-the-badge)](https://resume-constructor-gev44.vercel.app)
 [![GitHub](https://img.shields.io/badge/GitHub-GEV44-181717?style=for-the-badge&logo=github)](https://github.com/GEV44/resume-constructor)
 
 ## 🌐 Live Site
 
-**https://resume-constructor.vercel.app**
+**https://resume-constructor-gev44.vercel.app**
+
+> Run `deploy-vercel.bat` once to deploy (free Vercel). The URL contains **"resume-constructor"** — good for Google search.
 
 ## ✨ Features
 
@@ -28,32 +30,32 @@
 - **AI**: Google Gemini Flash via Lovable AI Gateway
 - **PDF**: html2canvas + jsPDF (10 built-in HTML templates in `resume-pdf.ts`)
 - **Icons**: lucide-react
-- **Deploy**: Vercel
+- **Deploy**: Vercel (free)
+
+## 🚀 Deploy (Free — One Click)
+
+Double-click **`deploy-vercel.bat`** in the project folder, or:
+
+```bash
+npm install
+npx vercel login          # sign in with GitHub (browser opens once)
+npx vercel --prod --yes   # deploy to production
+```
+
+Set in Vercel Dashboard → Settings → Environment Variables:
+- `VITE_SITE_URL` = `https://resume-constructor-gev44.vercel.app`
+
+Every `git push` to `main` auto-redeploys if GitHub is connected to Vercel.
 
 ## 🚀 Run Locally
 
-### Prerequisites
-- Node.js 18+
-- Supabase project (for auth & resume storage)
-- No AI API key needed locally if using Lovable-hosted Supabase functions
-
-### Setup
 ```bash
 git clone https://github.com/GEV44/resume-constructor.git
 cd resume-constructor
 npm install
 cp .env.example .env
-```
-
-```bash
 npm run dev
 # http://localhost:5173
-```
-
-### Build
-```bash
-npm run build
-npm run preview
 ```
 
 ## 📁 Project Structure
@@ -65,27 +67,19 @@ src/
 ├── lib/
 │   ├── resume-pdf.ts   10 PDF templates + export logic
 │   ├── job-roles.ts    36 role definitions + scoring weights
-│   └── scoring.ts      Deterministic ATS scoring engine
-├── contexts/           AuthContext
-└── integrations/       Supabase client & types
-supabase/
-└── functions/          parse-resume, score-resume, optimize-resume
-public/                 sitemap.xml, robots.txt (SEO)
+│   └── site.ts         Public URL (VITE_SITE_URL)
+supabase/functions/     parse-resume, score-resume, optimize-resume
+scripts/generate-seo.mjs  Builds sitemap.xml + robots.txt at deploy time
 ```
 
-## 🌍 Custom Domain & Google SEO
+## 🔍 Google SEO (Free)
 
-Yes — you can use **your own domain** instead of `lovable.app` or `vercel.app`:
+1. Deploy with `deploy-vercel.bat`
+2. [Google Search Console](https://search.google.com/search-console) → add your site → verify
+3. Submit sitemap: `https://resume-constructor-gev44.vercel.app/sitemap.xml`
+4. GitHub repo **About** → set Website to your live URL
 
-1. Buy a domain (e.g. `resume-constructor.com` or `gevorg.dev`)
-2. In [Vercel Dashboard](https://vercel.com) → your project → **Settings → Domains** → add domain
-3. Set DNS records as Vercel instructs (usually a CNAME)
-4. Set in `.env`: `VITE_SITE_URL=https://yourdomain.com`
-5. Redeploy: `vercel --prod`
-
-SEO files (`sitemap.xml`, `robots.txt`, canonical URLs) use `VITE_SITE_URL`. After adding a custom domain, update `.env` and redeploy so Google indexes **your** site when people search "resume constructor".
-
-Google Search Console: verify at [search.google.com/search-console](https://search.google.com/search-console) and submit your sitemap (`/sitemap.xml`).
+Page titles and meta tags include **"Resume Constructor"** and **"AI Resume Builder"** for search visibility.
 
 ## 👤 Author
 
