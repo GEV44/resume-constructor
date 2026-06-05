@@ -1,12 +1,4 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
-  "build": {
-    "env": {
-      "VITE_SITE_URL": "https://resume-constructor-gev44.vercel.app"
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
