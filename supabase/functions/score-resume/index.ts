@@ -165,9 +165,9 @@ Analyze EVERY aspect and return findings using the tool provided. Be brutal and 
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a brutally honest resume reviewer. Find specific problems with exact quotes and actionable fixes." },
+          { role: "system", content: "Today is June 2026. Use 2025–2026 resume and job market standards. Do not reference 2024 as the current year.\n\nYou are a brutally honest resume reviewer. Find specific problems with exact quotes and actionable fixes." },
           { role: "user", content: aiPrompt }
         ],
         tools: [{
