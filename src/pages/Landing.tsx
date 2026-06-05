@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
-  Briefcase, GraduationCap, Star, ArrowRight, User, Github, CheckCircle2,
+  Briefcase, GraduationCap, Star, ArrowRight, User, Github,
+  PenLine, LayoutTemplate,
 } from "lucide-react";
 import Seo from "@/components/Seo";
 import { SITE_URL } from "@/lib/site";
@@ -108,22 +109,39 @@ export default function Landing() {
               AI-Powered Resume Intelligence
             </div>
 
-            <h1 className="font-heading font-black leading-[0.98] tracking-tight text-5xl md:text-6xl lg:text-7xl mb-6">
+            <h1 className="font-heading font-black leading-[0.98] tracking-tight text-5xl md:text-6xl lg:text-7xl mb-4">
               Build Resumes That{" "}
               <span className="gradient-text whitespace-nowrap">Get Noticed</span>
             </h1>
 
-            <p className="text-lg text-muted-foreground max-w-md mb-10 leading-relaxed">
+            <p className="text-base text-muted-foreground max-w-md mb-8 leading-relaxed">
               Score against <span className="text-foreground font-medium">36 roles</span>,
               optimize with AI, and export in{" "}
               <span className="text-foreground font-medium">10 polished templates</span>.
             </p>
+
+            {/* Feature pills — matching og-image style */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              {[
+                { icon: PenLine, label: "AI-Powered Writing" },
+                { icon: LayoutTemplate, label: "ATS-Friendly Templates" },
+                { icon: TrendingUp, label: "Stand Out & Get Hired" },
+              ].map((p) => (
+                <div key={p.label} className="glass rounded-full pl-2 pr-4 py-2 flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                    <p.icon className="w-4 h-4 text-white" />
+                  </span>
+                  <span className="text-xs font-medium">{p.label}</span>
+                </div>
+              ))}
+            </div>
 
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 to="/signup"
                 className="group inline-flex items-center gap-3 rounded-full px-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 transition-all"
               >
+                <Sparkles className="w-4 h-4" />
                 Create Your Resume
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -136,15 +154,6 @@ export default function Landing() {
                 <Github className="w-4 h-4" />
                 GitHub
               </a>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-9 text-xs text-muted-foreground">
-              {["No credit card", "36 job roles", "Deterministic scoring"].map((t) => (
-                <span key={t} className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
-                  {t}
-                </span>
-              ))}
             </div>
           </motion.div>
 
