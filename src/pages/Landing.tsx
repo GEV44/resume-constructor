@@ -195,22 +195,169 @@ export default function Landing() {
               </p>
             </motion.div>
 
-            {/* RIGHT — full og-image, flat & clean (no crop, no 3D tilt) */}
+            {/* RIGHT — custom animated resume mockup */}
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 0.12, ease: "easeOut" }}
-              className="relative flex items-center justify-center mt-8 lg:mt-0"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.15, ease: "easeOut" }}
+              className="relative flex items-center justify-center mt-10 lg:mt-0 h-[520px] lg:h-[600px]"
             >
-              <div className="absolute inset-0 max-w-[600px] mx-auto rounded-3xl bg-primary/15 blur-[90px] pointer-events-none" />
-              <motion.img
-                src="/og-image.jpg"
-                alt="AI Resume Builder preview"
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="relative w-full max-w-[580px] rounded-2xl border border-white/10 shadow-[0_24px_80px_-12px_rgba(99,102,241,0.45)] select-none"
-                draggable={false}
+              {/* ambient glow */}
+              <div className="absolute inset-0 max-w-[560px] mx-auto rounded-[3rem] bg-gradient-to-br from-primary/30 via-accent/20 to-cyan-400/20 blur-[100px] pointer-events-none" />
+
+              {/* ATS Score floating card — top right */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="absolute z-30 top-2 right-2 sm:top-6 sm:right-4 glass rounded-2xl px-4 py-3 border border-white/15 shadow-2xl shadow-primary/20"
+                style={{ transform: "rotate(3deg)" }}
+              >
+                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground mb-1">ATS Score</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-heading font-black text-3xl gradient-text">94</span>
+                  <span className="text-xs text-accent font-bold">↑ +28</span>
+                </div>
+                <div className="mt-2 h-1.5 w-24 rounded-full bg-white/10 overflow-hidden">
+                  <motion.div
+                    initial={{ width: "0%" }}
+                    animate={{ width: "94%" }}
+                    transition={{ duration: 1.4, delay: 0.9, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-primary to-accent"
+                  />
+                </div>
+              </motion.div>
+
+              {/* AI Optimizing chip — middle left */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                className="absolute z-30 left-0 sm:left-2 top-1/2 -translate-y-1/2 glass rounded-full pl-2 pr-4 py-2 border border-white/15 shadow-xl flex items-center gap-2.5"
+                style={{ transform: "rotate(-4deg)" }}
+              >
+                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
+                </span>
+                <div className="leading-tight">
+                  <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">AI Enhancing</p>
+                  <p className="text-xs font-bold">Bullet points…</p>
+                </div>
+                <span className="flex gap-0.5 ml-1">
+                  {[0, 1, 2].map((i) => (
+                    <motion.span
+                      key={i}
+                      animate={{ opacity: [0.2, 1, 0.2] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                      className="w-1 h-1 rounded-full bg-accent"
+                    />
+                  ))}
+                </span>
+              </motion.div>
+
+              {/* Back card (offset) */}
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute z-10 w-[260px] sm:w-[300px] h-[380px] sm:h-[440px] rounded-2xl glass border border-white/8"
+                style={{ transform: "translate(28px, 28px) rotate(6deg)" }}
               />
+
+              {/* Main resume card */}
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                className="relative z-20 w-[280px] sm:w-[340px] rounded-2xl bg-gradient-to-br from-[#1a1430]/95 to-[#0f0a1f]/95 border border-white/15 shadow-[0_30px_90px_-15px_rgba(99,102,241,0.55)] backdrop-blur-xl overflow-hidden"
+              >
+                {/* Header band */}
+                <div className="relative p-5 sm:p-6 pb-4 border-b border-white/10">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/15 to-accent/10" />
+                  <div className="relative flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-heading font-black text-white text-lg shadow-lg shadow-primary/40">
+                      AH
+                    </div>
+                    <div className="flex-1">
+                      <div className="h-3 w-32 rounded bg-white/80 mb-1.5" />
+                      <div className="h-2 w-20 rounded bg-white/30" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <div className="p-5 sm:p-6 space-y-4">
+                  {/* section: experience */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <span className="w-1 h-3 rounded-full bg-gradient-to-b from-primary to-accent" />
+                      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-accent">Experience</span>
+                    </div>
+                    <div className="space-y-1.5 pl-3">
+                      <div className="h-1.5 w-full rounded-full bg-white/20" />
+                      <motion.div
+                        animate={{ width: ["60%", "92%", "60%"] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="h-1.5 rounded-full bg-gradient-to-r from-primary/60 to-accent/60"
+                      />
+                      <div className="h-1.5 w-4/5 rounded-full bg-white/15" />
+                    </div>
+                  </div>
+
+                  {/* section: skills */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <span className="w-1 h-3 rounded-full bg-gradient-to-b from-primary to-accent" />
+                      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-accent">Skills</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pl-3">
+                      {["React", "TypeScript", "AI/ML", "Node", "SQL"].map((s, i) => (
+                        <motion.span
+                          key={s}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 1 + i * 0.1, duration: 0.4 }}
+                          className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/8 border border-white/15 text-white/85"
+                        >
+                          {s}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* section: education */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <span className="w-1 h-3 rounded-full bg-gradient-to-b from-primary to-accent" />
+                      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-accent">Education</span>
+                    </div>
+                    <div className="space-y-1.5 pl-3">
+                      <div className="h-1.5 w-3/4 rounded-full bg-white/20" />
+                      <div className="h-1.5 w-1/2 rounded-full bg-white/15" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* scan line */}
+                <motion.div
+                  animate={{ y: [-20, 480] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent pointer-events-none shadow-[0_0_12px_hsl(var(--accent))]"
+                />
+              </motion.div>
+
+              {/* Template chip — bottom right */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1 }}
+                className="absolute z-30 bottom-4 right-0 sm:right-2 glass rounded-xl px-3.5 py-2.5 border border-white/15 shadow-xl flex items-center gap-2.5"
+                style={{ transform: "rotate(5deg)" }}
+              >
+                <LayoutTemplate className="w-4 h-4 text-accent" />
+                <div className="leading-tight">
+                  <p className="text-[9px] text-muted-foreground font-mono uppercase tracking-wider">Template</p>
+                  <p className="text-xs font-bold">Modern · 1 of 10</p>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
         </section>
