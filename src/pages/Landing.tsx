@@ -213,7 +213,7 @@ export default function Landing() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.1 }}
               className="glass rounded-2xl px-4 sm:px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-center border border-white/8 divide-x-0 md:divide-x divide-white/5"
             >
               {stats.map((s) => (
@@ -237,7 +237,7 @@ export default function Landing() {
               className="text-center mb-14"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.1 }}
             >
               <h2 className="font-heading font-extrabold mb-3">
                 Everything You{" "}
@@ -255,8 +255,8 @@ export default function Landing() {
                   className="glass-hover rounded-2xl p-7 group"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
+                  viewport={{ once: true, amount: 0.05 }}
+                  transition={{ delay: i * 0.06, duration: 0.5 }}
                 >
                   <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/25 to-accent/20 border border-white/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                     <f.icon className="w-5 h-5 text-accent" />
@@ -275,7 +275,7 @@ export default function Landing() {
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.1 }}
               className="relative overflow-hidden rounded-3xl glass border border-white/10 p-12 md:p-16 text-center"
             >
               <div className="pointer-events-none absolute inset-0 -z-10">
