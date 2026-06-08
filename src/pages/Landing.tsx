@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
   ArrowRight, Github, PenLine, LayoutTemplate, ChevronRight,
+  Upload, Wand2, Download,
 } from "lucide-react";
 import Seo from "@/components/Seo";
 import { SITE_URL } from "@/lib/site";
@@ -27,6 +28,13 @@ const pills = [
   { icon: PenLine,        label: "AI-Powered Writing" },
   { icon: LayoutTemplate, label: "ATS-Friendly Templates" },
   { icon: TrendingUp,     label: "Stand Out & Get Hired" },
+];
+
+const steps = [
+  { icon: Upload,   title: "Upload",   desc: "Drop your PDF or DOCX — we parse it in seconds, structured and clean." },
+  { icon: BarChart3, title: "Score",    desc: "Get a deterministic ATS score against any of 36 target roles." },
+  { icon: Wand2,    title: "Optimize", desc: "AI rewrites weak bullets, adds missing keywords — no fabrication." },
+  { icon: Download, title: "Export",   desc: "Download a polished PDF in your choice of 10 recruiter-ready templates." },
 ];
 
 export default function Landing() {
