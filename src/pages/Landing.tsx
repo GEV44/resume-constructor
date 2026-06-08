@@ -187,44 +187,22 @@ export default function Landing() {
               </p>
             </motion.div>
 
-            {/* RIGHT — 3D resume card only (cropped from og-image, no duplicate text) */}
+            {/* RIGHT — full og-image, flat & clean (no crop, no 3D tilt) */}
             <motion.div
-              initial={{ opacity: 0, x: 40, rotateY: -8 }}
-              animate={{ opacity: 1, x: 0, rotateY: 0 }}
-              transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
-              className="relative flex items-center justify-center mt-4 lg:mt-0 [perspective:1200px]"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.12, ease: "easeOut" }}
+              className="relative flex items-center justify-center mt-8 lg:mt-0"
             >
-              {/* Glow pool behind card */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(100%,420px)] aspect-square rounded-full bg-gradient-to-br from-cyan-400/25 via-primary/30 to-accent/20 blur-[80px] pointer-events-none" />
-
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                className="relative w-full max-w-[440px] mx-auto lg:max-w-none lg:mx-0 [transform-style:preserve-3d] lg:[transform:rotateY(-10deg)_rotateX(3deg)]"
-              >
-                {/* Gradient ring frame */}
-                <div className="absolute -inset-[1px] rounded-[1.65rem] bg-gradient-to-br from-cyan-400/50 via-primary/30 to-accent/40 opacity-80 blur-[0.5px]" />
-
-                {/* Crop window — portrait ratio keeps only the card side of og-image */}
-                <div className="relative overflow-hidden rounded-[1.6rem] aspect-[4/5] shadow-2xl shadow-cyan-500/20 ring-1 ring-white/15">
-                  <img
-                    src="/og-image.jpg"
-                    alt="AI Resume Builder — 3D resume preview"
-                    className="absolute inset-0 h-full w-full object-cover object-[88%_center] select-none pointer-events-none scale-[1.08]"
-                    draggable={false}
-                  />
-                  {/* Blend left edge into page background */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background:
-                        "linear-gradient(to right, hsl(230 55% 6%) 0%, hsl(230 55% 6% / 0.9) 12%, hsl(230 55% 6% / 0.35) 28%, transparent 48%)",
-                    }}
-                  />
-                  {/* Subtle top shine */}
-                  <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
-                </div>
-              </motion.div>
+              <div className="absolute inset-0 max-w-[600px] mx-auto rounded-3xl bg-primary/15 blur-[90px] pointer-events-none" />
+              <motion.img
+                src="/og-image.jpg"
+                alt="AI Resume Builder preview"
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                className="relative w-full max-w-[580px] rounded-2xl border border-white/10 shadow-[0_24px_80px_-12px_rgba(99,102,241,0.45)] select-none"
+                draggable={false}
+              />
             </motion.div>
           </div>
         </section>
