@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
   ArrowRight, Github, PenLine, LayoutTemplate, ChevronRight,
+  Upload, Wand2, Download,
 } from "lucide-react";
 import Seo from "@/components/Seo";
 import { SITE_URL } from "@/lib/site";
@@ -27,6 +28,13 @@ const pills = [
   { icon: PenLine,        label: "AI-Powered Writing" },
   { icon: LayoutTemplate, label: "ATS-Friendly Templates" },
   { icon: TrendingUp,     label: "Stand Out & Get Hired" },
+];
+
+const steps = [
+  { icon: Upload,   title: "Upload",   desc: "Drop your PDF or DOCX — we parse it in seconds, structured and clean." },
+  { icon: BarChart3, title: "Score",    desc: "Get a deterministic ATS score against any of 36 target roles." },
+  { icon: Wand2,    title: "Optimize", desc: "AI rewrites weak bullets, adds missing keywords — no fabrication." },
+  { icon: Download, title: "Export",   desc: "Download a polished PDF in your choice of 10 recruiter-ready templates." },
 ];
 
 export default function Landing() {
@@ -212,8 +220,8 @@ export default function Landing() {
           <div className="container mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               className="glass rounded-2xl px-4 sm:px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-center border border-white/8 divide-x-0 md:divide-x divide-white/5"
             >
               {stats.map((s) => (
@@ -230,59 +238,78 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ── Features ───────────────────────────────────────────────────── */}
-        <section className="section-padding">
+        {/* ── How it works ───────────────────────────────────────────────── */}
+        <section className="py-20 md:py-28 px-4">
           <div className="container mx-auto">
-            <motion.div
-              className="text-center mb-14"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="font-heading font-extrabold mb-3">
+            <div className="text-center mb-14">
+              <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-accent mb-3">How it works</p>
+              <h2 className="font-heading font-extrabold text-3xl md:text-5xl">
+                From upload to <span className="gradient-text">offer-ready</span> in 4 steps
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 relative">
+              {steps.map((s, i) => (
+                <div
+                  key={s.title}
+                  className="glass rounded-2xl p-6 relative border border-white/8 hover:border-white/20 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
+                      <s.icon className="w-5 h-5 text-white" />
+                    </span>
+                    <span className="font-heading font-black text-4xl text-white/8 leading-none">
+                      0{i + 1}
+                    </span>
+                  </div>
+                  <h3 className="font-heading font-bold text-base mb-2">{s.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Features ───────────────────────────────────────────────────── */}
+        <section className="py-20 md:py-28 px-4">
+          <div className="container mx-auto">
+            <div className="text-center mb-14">
+              <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-accent mb-3">What you get</p>
+              <h2 className="font-heading font-extrabold text-3xl md:text-5xl mb-3">
                 Everything You{" "}
                 <span className="gradient-text-cyan">Need</span>
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto text-sm md:text-base">
                 Professional-grade resume analysis and optimization in one platform.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {features.map((f, i) => (
-                <motion.div
+              {features.map((f) => (
+                <div
                   key={f.title}
                   className="glass-hover rounded-2xl p-7 group"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
                 >
                   <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/25 to-accent/20 border border-white/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                     <f.icon className="w-5 h-5 text-accent" />
                   </div>
                   <h3 className="font-heading font-bold text-base mb-2">{f.title}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
         {/* ── Final CTA ──────────────────────────────────────────────────── */}
-        <section className="section-padding">
+        <section className="py-20 md:py-28 px-4">
           <div className="container mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="relative overflow-hidden rounded-3xl glass border border-white/10 p-12 md:p-16 text-center"
-            >
+            <div className="relative overflow-hidden rounded-3xl glass border border-white/10 p-12 md:p-16 text-center">
               <div className="pointer-events-none absolute inset-0 -z-10">
                 <div className="absolute -top-24 left-1/3 w-96 h-96 rounded-full bg-primary/30 blur-[120px]" />
                 <div className="absolute -bottom-24 right-1/4 w-96 h-96 rounded-full bg-accent/25 blur-[120px]" />
               </div>
-              <h2 className="font-heading font-extrabold mb-4">
+              <h2 className="font-heading font-extrabold text-3xl md:text-5xl mb-4">
                 Ready to{" "}
                 <span className="gradient-text">Stand Out</span>?
               </h2>
@@ -298,7 +325,7 @@ export default function Landing() {
                 Create Your Resume — Free
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-            </motion.div>
+            </div>
           </div>
         </section>
       </main>
