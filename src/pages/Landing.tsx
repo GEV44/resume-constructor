@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
   ArrowRight, Github, PenLine, LayoutTemplate, ChevronRight,
-  Briefcase, GraduationCap, Star, User,
 } from "lucide-react";
 import Seo from "@/components/Seo";
 import { SITE_URL } from "@/lib/site";
@@ -188,84 +187,22 @@ export default function Landing() {
               </p>
             </motion.div>
 
-            {/* RIGHT — clean coded 3D resume card (no score chip) */}
+            {/* RIGHT — official og-image (full graphic, no crop) */}
             <motion.div
               initial={{ opacity: 0, x: 48 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.85, delay: 0.18, ease: "easeOut" }}
-              className="relative hidden lg:flex items-center justify-center"
+              className="relative flex items-center justify-center mt-10 lg:mt-0"
             >
-              {/* Ambient glow */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-cyan-400/15 blur-[120px] scale-105 pointer-events-none" />
-
-              <motion.div
-                animate={{ y: [0, -12, 0] }}
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/25 via-accent/15 to-cyan-400/10 blur-[100px] scale-110 pointer-events-none" />
+              <motion.img
+                src="/og-image.jpg"
+                alt="AI Resume Builder — professional resume templates and ATS scoring"
+                animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                className="relative w-full max-w-[420px]"
-              >
-                {/* Stacked card behind for depth */}
-                <div className="absolute -top-4 -left-4 right-6 bottom-6 rounded-[1.75rem] bg-gradient-to-br from-primary/20 to-accent/10 border border-white/5 backdrop-blur-sm" />
-
-                {/* Front glass card */}
-                <div className="relative rounded-[1.75rem] bg-gradient-to-br from-[#1c2547]/95 to-[#0e1530]/95 backdrop-blur-xl border border-white/12 shadow-2xl shadow-primary/40 p-8 overflow-hidden">
-                  {/* Inner sheen */}
-                  <div className="pointer-events-none absolute -top-1/2 -right-1/4 w-2/3 h-full bg-gradient-to-b from-white/10 to-transparent rotate-12 blur-2xl" />
-
-                  {/* Sparkle corner badge */}
-                  <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-primary flex items-center justify-center shadow-xl shadow-cyan-400/50 ring-4 ring-[#0e1530]">
-                    <Sparkles className="w-6 h-6 text-white" />
-                  </div>
-
-                  {/* Header */}
-                  <div className="relative flex items-center gap-4 mb-7 pb-6 border-b border-white/10">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-lg shadow-primary/40">
-                      <User className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="flex-1 space-y-2.5">
-                      <div className="h-3 w-40 rounded-full bg-gradient-to-r from-white/80 to-white/30" />
-                      <div className="h-2.5 w-28 rounded-full bg-white/20" />
-                      <div className="h-2 w-32 rounded-full bg-white/10" />
-                    </div>
-                  </div>
-
-                  {/* Sections */}
-                  {[
-                    { icon: Briefcase, lines: 3 },
-                    { icon: GraduationCap, lines: 2 },
-                    { icon: Star, skills: true },
-                  ].map((s, idx) => (
-                    <div key={idx} className="relative flex gap-4 mb-6 last:mb-0">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/50 to-accent/40 flex items-center justify-center shrink-0 shadow-md shadow-primary/30">
-                        <s.icon className="w-5 h-5 text-cyan-200" />
-                      </div>
-                      <div className="flex-1 pt-1">
-                        {s.skills ? (
-                          <div className="flex flex-wrap gap-2">
-                            {[60, 80, 52, 70, 44].map((w, i) => (
-                              <div
-                                key={i}
-                                className="h-2.5 rounded-full bg-gradient-to-r from-primary/70 to-cyan-400/70"
-                                style={{ width: `${w}px` }}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="h-2.5 w-3/4 rounded-full bg-white/25" />
-                            {Array.from({ length: (s.lines ?? 1) - 1 }).map((_, i) => (
-                              <div
-                                key={i}
-                                className="h-2 rounded-full bg-white/10"
-                                style={{ width: `${90 - i * 18}%` }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
+                className="relative w-full max-w-[620px] rounded-2xl shadow-2xl shadow-primary/35 border border-white/10 select-none"
+                draggable={false}
+              />
             </motion.div>
           </div>
         </section>
