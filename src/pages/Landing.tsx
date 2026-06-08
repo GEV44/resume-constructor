@@ -107,38 +107,39 @@ export default function Landing() {
 
       <main>
         {/* ── Hero ───────────────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden min-h-screen flex items-center px-4 pt-20">
+        <section className="relative overflow-hidden min-h-[92vh] flex items-center px-4 pt-20">
           {/* Ambient orbs */}
           <div className="pointer-events-none absolute inset-0 -z-10">
             <div className="absolute top-1/4 -left-32 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[160px]" />
             <div className="absolute bottom-0 right-0 w-[560px] h-[560px] rounded-full bg-accent/20 blur-[160px]" />
           </div>
 
-          <div className="container mx-auto grid lg:grid-cols-[1fr_1fr] gap-12 lg:gap-8 items-center py-16">
+          <div className="container mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 xl:gap-20 items-center py-12 lg:py-20">
 
             {/* LEFT — copy */}
             <motion.div
               initial={{ opacity: 0, y: 32 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
-              className="flex flex-col"
+              className="flex flex-col lg:pr-4"
             >
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs mb-6 font-mono uppercase tracking-wider self-start">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-[11px] mb-7 font-mono uppercase tracking-[0.14em] self-start border-white/10">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shadow-[0_0_8px_hsl(var(--accent))]" />
                 AI-Powered Resume Intelligence
               </div>
 
               {/* Headline */}
-              <h1 className="font-heading font-black tracking-tight leading-[0.95] text-5xl md:text-6xl lg:text-[4.5rem] xl:text-[5.25rem] mb-3">
-                Build Resumes<br />That{" "}
+              <h1 className="font-heading font-black tracking-tight leading-[0.92] text-[2.75rem] sm:text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] mb-4">
+                Build Resumes
+                <br />
+                That{" "}
                 <span className="gradient-text">Get Noticed</span>
               </h1>
 
-              {/* Decorative gradient line — like the og-image */}
-              <div className="h-[3px] w-28 rounded-full bg-gradient-to-r from-primary via-accent to-cyan-400 mb-5" />
+              <div className="h-[3px] w-24 rounded-full bg-gradient-to-r from-primary via-accent to-cyan-400 mb-6 shadow-[0_0_12px_hsl(var(--accent)/0.5)]" />
 
-              <p className="text-base md:text-lg text-muted-foreground max-w-[440px] mb-8 leading-relaxed">
+              <p className="text-[15px] md:text-lg text-muted-foreground max-w-[420px] mb-9 leading-relaxed">
                 Score against{" "}
                 <span className="text-foreground font-semibold">36 roles</span>, optimize
                 with AI, and export in{" "}
@@ -146,25 +147,25 @@ export default function Landing() {
               </p>
 
               {/* Pills */}
-              <div className="flex flex-wrap gap-3 mb-9">
+              <div className="flex flex-wrap gap-2.5 mb-10">
                 {pills.map((p) => (
                   <div
                     key={p.label}
-                    className="glass rounded-full pl-1.5 pr-4 py-1.5 flex items-center gap-2.5"
+                    className="glass rounded-full pl-1.5 pr-3.5 py-1.5 flex items-center gap-2 border-white/8 hover:border-white/20 transition-colors"
                   >
-                    <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                    <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-md shadow-primary/30">
                       <p.icon className="w-3.5 h-3.5 text-white" />
                     </span>
-                    <span className="text-xs font-medium">{p.label}</span>
+                    <span className="text-[11px] sm:text-xs font-medium">{p.label}</span>
                   </div>
                 ))}
               </div>
 
               {/* CTAs */}
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <Link
                   to="/signup"
-                  className="group inline-flex items-center gap-3 rounded-full px-8 py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-sm uppercase tracking-wider shadow-xl shadow-primary/35 hover:shadow-primary/55 hover:-translate-y-0.5 transition-all duration-300"
+                  className="group inline-flex items-center gap-2.5 sm:gap-3 rounded-full px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-primary to-accent text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-xl shadow-primary/40 hover:shadow-primary/60 hover:-translate-y-0.5 transition-all duration-300"
                 >
                   <Sparkles className="w-4 h-4" />
                   Create Your Resume
@@ -174,35 +175,56 @@ export default function Landing() {
                   href="https://github.com/GEV44/resume-constructor"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-4 border border-glass-border text-sm font-bold uppercase tracking-wider hover:bg-white/5 transition-all duration-300"
+                  className="inline-flex items-center gap-2 rounded-full px-5 sm:px-7 py-3.5 sm:py-4 border border-glass-border text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-white/5 hover:border-white/25 transition-all duration-300"
                 >
                   <Github className="w-4 h-4" />
                   GitHub
                 </a>
               </div>
 
-              {/* Trust line */}
-              <p className="mt-6 text-xs text-muted-foreground font-mono">
+              <p className="mt-7 text-[11px] text-muted-foreground/80 font-mono tracking-wide">
                 Free · No credit card · Open source
               </p>
             </motion.div>
 
-            {/* RIGHT — official og-image (full graphic, no crop) */}
+            {/* RIGHT — 3D resume card only (cropped from og-image, no duplicate text) */}
             <motion.div
-              initial={{ opacity: 0, x: 48 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.85, delay: 0.18, ease: "easeOut" }}
-              className="relative flex items-center justify-center mt-10 lg:mt-0"
+              initial={{ opacity: 0, x: 40, rotateY: -8 }}
+              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
+              className="relative flex items-center justify-center mt-4 lg:mt-0 [perspective:1200px]"
             >
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/25 via-accent/15 to-cyan-400/10 blur-[100px] scale-110 pointer-events-none" />
-              <motion.img
-                src="/og-image.jpg"
-                alt="AI Resume Builder — professional resume templates and ATS scoring"
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                className="relative w-full max-w-[620px] rounded-2xl shadow-2xl shadow-primary/35 border border-white/10 select-none"
-                draggable={false}
-              />
+              {/* Glow pool behind card */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(100%,420px)] aspect-square rounded-full bg-gradient-to-br from-cyan-400/25 via-primary/30 to-accent/20 blur-[80px] pointer-events-none" />
+
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                className="relative w-full max-w-[440px] mx-auto lg:max-w-none lg:mx-0 [transform-style:preserve-3d] lg:[transform:rotateY(-10deg)_rotateX(3deg)]"
+              >
+                {/* Gradient ring frame */}
+                <div className="absolute -inset-[1px] rounded-[1.65rem] bg-gradient-to-br from-cyan-400/50 via-primary/30 to-accent/40 opacity-80 blur-[0.5px]" />
+
+                {/* Crop window — portrait ratio keeps only the card side of og-image */}
+                <div className="relative overflow-hidden rounded-[1.6rem] aspect-[4/5] shadow-2xl shadow-cyan-500/20 ring-1 ring-white/15">
+                  <img
+                    src="/og-image.jpg"
+                    alt="AI Resume Builder — 3D resume preview"
+                    className="absolute inset-0 h-full w-full object-cover object-[88%_center] select-none pointer-events-none scale-[1.08]"
+                    draggable={false}
+                  />
+                  {/* Blend left edge into page background */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(to right, hsl(230 55% 6%) 0%, hsl(230 55% 6% / 0.9) 12%, hsl(230 55% 6% / 0.35) 28%, transparent 48%)",
+                    }}
+                  />
+                  {/* Subtle top shine */}
+                  <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
+                </div>
+              </motion.div>
             </motion.div>
           </div>
         </section>
@@ -214,10 +236,10 @@ export default function Landing() {
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="glass rounded-2xl px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-center border border-white/8"
+              className="glass rounded-2xl px-4 sm:px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-center border border-white/8 divide-x-0 md:divide-x divide-white/5"
             >
               {stats.map((s) => (
-                <div key={s.label}>
+                <div key={s.label} className="px-2 py-1">
                   <p className="font-heading font-black text-2xl md:text-3xl gradient-text mb-0.5">
                     {s.value}
                   </p>
