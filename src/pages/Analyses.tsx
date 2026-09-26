@@ -21,13 +21,16 @@ export default function Analyses() {
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<Analysis | null>(null);
 
+  // Keyed on the id, not the user object, which is replaced on every token refresh.
+  const userId = user?.id;
+
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     let cancelled = false;
     supabase
       .from("analyses")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (cancelled) return;
@@ -35,7 +38,7 @@ export default function Analyses() {
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [user]);
+  }, [userId]);
 
   const deleteAnalysis = async () => {
     if (!pendingDelete) return;

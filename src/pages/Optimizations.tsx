@@ -162,26 +162,34 @@ export default function Optimizations() {
     setLoadingDetail(false);
   };
 
+  // Keyed on the id, not the user object, which is replaced on every token refresh.
+  const userId = user?.id;
+  const autoSelected = useRef(false);
+
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     let cancelled = false;
     supabase
       .from("optimized_resumes")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (cancelled) return;
         const list = data || [];
         setItems(list);
         setLoading(false);
-        const target = autoSelectId ? list.find((i) => i.id === autoSelectId) : undefined;
-        if (target) selectItem(target);
+        // Auto-open only once, so a later reload never toggles the item closed.
+        const target = !autoSelected.current && autoSelectId ? list.find((i) => i.id === autoSelectId) : undefined;
+        if (target) {
+          autoSelected.current = true;
+          selectItem(target);
+        }
       });
     return () => { cancelled = true; };
     // Load once per user; autoSelectId and selectItem are only read when the list arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [userId]);
 
   const edit = (updater: (d: ResumeData) => ResumeData) => {
     setResumeData((d) => (d ? updater(d) : d));
