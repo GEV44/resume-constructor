@@ -1,4 +1,4 @@
-import { adminClient, enforceHourlyLimit, handle, HttpError, json, readJson, requireUser } from "../_shared/http.ts";
+import { adminClient, enforceHourlyLimit, handle, HttpError, isMissingColumn, json, readJson, requireUser } from "../_shared/http.ts";
 import { callTool, todayLine } from "../_shared/ai.ts";
 import { getJobRoleById } from "../_shared/job-roles.ts";
 import { scoreResume, type ParsedResume } from "../_shared/scoring.ts";
@@ -109,30 +109,36 @@ List every meaningful problem (most severe first), then strengths, recommendatio
   const strengths = clean(review.strengths, 8);
   const recommendations = clean(review.recommendations, 8);
 
-  const { data: analysis, error } = await supabase
-    .from("analyses")
-    .insert({
-      resume_id: resume.id,
-      user_id: user.id,
-      job_role: role.id,
-      overall_score: score.overall_score,
-      skill_score: score.skill_score,
-      experience_score: score.experience_score,
-      project_score: score.project_score,
-      education_score: score.education_score,
-      impact_score: score.impact_score,
-      grade: score.grade,
-      missing_skills: score.missing_skills,
-      strengths: strengths.length ? strengths : score.strengths,
-      recommendations: recommendations.length ? recommendations : score.recommendations,
-      problems,
-      structure_issues: clean(review.structure_issues, 12),
-      job_description: jobDescription || null,
-      job_match: score.job_match,
-    })
-    .select()
-    .single();
-  if (error) throw new Error("Failed to save analysis: " + error.message);
+  const base = {
+    resume_id: resume.id,
+    user_id: user.id,
+    job_role: role.id,
+    overall_score: score.overall_score,
+    skill_score: score.skill_score,
+    experience_score: score.experience_score,
+    project_score: score.project_score,
+    education_score: score.education_score,
+    impact_score: score.impact_score,
+    grade: score.grade,
+    missing_skills: score.missing_skills,
+    strengths: strengths.length ? strengths : score.strengths,
+    recommendations: recommendations.length ? recommendations : score.recommendations,
+  };
+  const insights = {
+    problems,
+    structure_issues: clean(review.structure_issues, 12),
+    job_description: jobDescription || null,
+    job_match: score.job_match,
+  };
 
-  return json(req, { ...analysis, analysisId: analysis.id });
+  let { data: analysis, error } = await supabase.from("analyses").insert({ ...base, ...insights }).select().single();
+  if (error && isMissingColumn(error)) {
+    // The insights migration hasn't been applied yet: save the core analysis and
+    // return the insights in the response so the UI can still show them.
+    console.warn("analyses insight columns missing — apply the latest migration");
+    ({ data: analysis, error } = await supabase.from("analyses").insert(base).select().single());
+  }
+  if (error || !analysis) throw new Error("Failed to save analysis: " + (error?.message ?? "no row returned"));
+
+  return json(req, { ...insights, ...analysis, analysisId: analysis.id });
 }));

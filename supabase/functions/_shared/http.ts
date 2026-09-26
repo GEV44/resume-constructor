@@ -70,6 +70,11 @@ export function handle(name: string, handler: (req: Request) => Promise<Response
   };
 }
 
+/** True for PostgREST errors caused by a column that doesn't exist (e.g. a pending migration). */
+export function isMissingColumn(error: { code?: string; message?: string }): boolean {
+  return error.code === "PGRST204" || error.code === "42703" || /column .* does not exist|Could not find the .* column/i.test(error.message ?? "");
+}
+
 export async function readJson<T>(req: Request): Promise<T> {
   try {
     return (await req.json()) as T;

@@ -115,7 +115,7 @@ Deno.serve(handle("optimize-resume", async (req) => {
   const mode: Mode = body.mode === "text" || body.mode === "design" ? body.mode : "both";
 
   const { data: analysis } = await supabase
-    .from("analyses").select("id, user_id, resume_id, job_role, job_description").eq("id", body.analysisId).maybeSingle();
+    .from("analyses").select("*").eq("id", body.analysisId).maybeSingle();
   if (!analysis || analysis.user_id !== user.id) throw new HttpError(403, "Forbidden");
   const { data: resume } = await supabase
     .from("resumes").select("id, user_id, original_text, parsed_json").eq("id", analysis.resume_id).maybeSingle();
@@ -126,7 +126,7 @@ Deno.serve(handle("optimize-resume", async (req) => {
 
   const original = (resume.parsed_json ?? {}) as ParsedResume;
   const originalText: string = resume.original_text ?? "";
-  const jobDescription: string = analysis.job_description ?? "";
+  const jobDescription: string = typeof analysis.job_description === "string" ? analysis.job_description : "";
   const base = {
     ...original,
     experience: original.experience ?? [],

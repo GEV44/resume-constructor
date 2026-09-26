@@ -148,7 +148,7 @@ export default function Optimizations() {
 
     const [{ data: originalResume }, { data: analysis }] = await Promise.all([
       supabase.from("resumes").select("original_text, parsed_json").eq("id", item.resume_id).maybeSingle(),
-      supabase.from("analyses").select("job_description").eq("id", item.analysis_id).maybeSingle(),
+      supabase.from("analyses").select("*").eq("id", item.analysis_id).maybeSingle(),
     ]);
     setJobDescription(analysis?.job_description ?? "");
     setOriginalText(originalResume?.original_text ?? "");
@@ -201,10 +201,11 @@ export default function Optimizations() {
       after_score: after,
       improvement_percentage: after - selected.before_score,
     };
-    const { error } = await supabase.from("optimized_resumes").update(update).eq("id", selected.id);
+    // RLS silently matches zero rows when the update policy is missing, so check what came back.
+    const { data: saved, error } = await supabase.from("optimized_resumes").update(update).eq("id", selected.id).select("id");
     setSaving(false);
-    if (error) {
-      toast.error("Could not save: " + error.message);
+    if (error || !saved?.length) {
+      toast.error(error ? "Could not save: " + error.message : "Saving edits needs the latest database update. Your edits still apply to exports.");
       return;
     }
     const next = { ...selected, ...update };

@@ -13,7 +13,7 @@ import {
 import { formatDate, formatRole, gradeColor } from "@/lib/format";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Analysis = Pick<Tables<"analyses">, "id" | "job_role" | "overall_score" | "grade" | "created_at" | "job_description">;
+type Analysis = Pick<Tables<"analyses">, "id" | "job_role" | "overall_score" | "grade" | "created_at"> & { job_description?: string | null };
 
 export default function Analyses() {
   const { user } = useAuth();
@@ -25,7 +25,7 @@ export default function Analyses() {
     if (!user) return;
     const { data } = await supabase
       .from("analyses")
-      .select("id, job_role, overall_score, grade, created_at, job_description")
+      .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     setAnalyses(data || []);
