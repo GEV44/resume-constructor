@@ -40,40 +40,51 @@ async function docxToText(bytes: Uint8Array): Promise<string> {
   return docxXmlToText(xml);
 }
 
-async function pdfToText(bytes: Uint8Array): Promise<string> {
+/** Resumes are short; the cap only guards against pathological uploads. */
+const MAX_PDF_PAGES = 30;
+
+async function pdfToText(bytes: Uint8Array): Promise<{ text: string; note?: string }> {
   const [pdfjs, { default: workerUrl }] = await Promise.all([
     import("pdfjs-dist"),
     import("pdfjs-dist/build/pdf.worker.min.mjs?url"),
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
   const task = pdfjs.getDocument({ data: bytes });
-  const doc = await task.promise;
-  const pages: string[] = [];
-  for (let n = 1; n <= Math.min(doc.numPages, 10); n++) {
-    const content = await (await doc.getPage(n)).getTextContent();
-    let page = "";
-    for (const item of content.items) {
-      if (!("str" in item)) continue;
-      page += item.str + (item.hasEOL ? "\n" : item.str && !item.str.endsWith(" ") ? " " : "");
+  try {
+    const doc = await task.promise;
+    const pageCount = Math.min(doc.numPages, MAX_PDF_PAGES);
+    const pages: string[] = [];
+    for (let n = 1; n <= pageCount; n++) {
+      const content = await (await doc.getPage(n)).getTextContent();
+      let page = "";
+      for (const item of content.items) {
+        if (!("str" in item)) continue;
+        page += item.str + (item.hasEOL ? "\n" : item.str && !item.str.endsWith(" ") ? " " : "");
+      }
+      pages.push(page.replace(/[ \t]+\n/g, "\n").replace(/ {2,}/g, " ").trim());
     }
-    pages.push(page.replace(/[ \t]+\n/g, "\n").replace(/ {2,}/g, " ").trim());
+    const note = doc.numPages > pageCount ? `Only the first ${pageCount} of ${doc.numPages} pages were read.` : undefined;
+    return { text: pages.join("\n\n"), note };
+  } finally {
+    // Release the worker and document even when a page fails to parse.
+    await task.destroy();
   }
-  await task.destroy();
-  return pages.join("\n\n");
 }
 
 /** Extracts plain text from a PDF, DOCX or TXT resume entirely in the browser. */
-export async function extractResumeText(file: File): Promise<string> {
+export async function extractResumeText(file: File): Promise<{ text: string; note?: string }> {
   if (file.size > MAX_BYTES) throw new ExtractError("File must be under 5 MB.");
   const bytes = new Uint8Array(await file.arrayBuffer());
   const kind = detectKind(bytes, file.name);
   if (!kind) throw new ExtractError("Please choose a PDF, DOCX or TXT file.");
 
-  const text = kind === "pdf" ? await pdfToText(bytes) : kind === "docx" ? await docxToText(bytes) : new TextDecoder().decode(bytes);
-  if (text.replace(/\s/g, "").length < 50) {
+  const result = kind === "pdf"
+    ? await pdfToText(bytes)
+    : { text: kind === "docx" ? await docxToText(bytes) : new TextDecoder().decode(bytes) };
+  if (result.text.replace(/\s/g, "").length < 50) {
     throw new ExtractError(kind === "pdf"
       ? "No text found — this looks like a scanned PDF. Export it as a text PDF or DOCX, or paste the text."
       : "The file appears to be empty.");
   }
-  return text;
+  return result;
 }

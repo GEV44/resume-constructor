@@ -61,19 +61,24 @@ export default function AtsChecker() {
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  // Each load gets an id so a slower, earlier file can never overwrite a newer one.
+  const loadId = useRef(0);
   const loadFile = async (file: File | undefined) => {
     if (!file) return;
+    const id = ++loadId.current;
     setExtracting(true);
     setFileNote(null);
     try {
-      const text = await extractResumeText(file);
+      const { text, note } = await extractResumeText(file);
+      if (id !== loadId.current) return;
       setResumeText(text.slice(0, 30000));
       setResult(null);
-      setFileNote({ tone: "ok", text: `Extracted text from ${file.name} — review it below, then check.` });
+      setFileNote({ tone: "ok", text: `Extracted text from ${file.name}${note ? ` (${note})` : ""} — review it below, then check.` });
     } catch (e) {
+      if (id !== loadId.current) return;
       setFileNote({ tone: "error", text: e instanceof ExtractError ? e.message : "Couldn't read that file. Try another format or paste the text." });
     } finally {
-      setExtracting(false);
+      if (id === loadId.current) setExtracting(false);
       if (fileInput.current) fileInput.current.value = "";
     }
   };
