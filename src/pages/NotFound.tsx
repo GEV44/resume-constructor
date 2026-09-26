@@ -1,30 +1,26 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import Seo from "@/components/Seo";
 
-const NotFound = () => {
+export default function NotFound() {
   const location = useLocation();
-
-  useEffect(() => {
-    if (import.meta.env.DEV) console.error(location.pathname);
-  }, [location.pathname]);
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
+    <main className="min-h-screen bg-animated-gradient flex items-center justify-center px-4">
       <Seo
         title="Page Not Found — AI Resume Builder"
         description="The page you're looking for doesn't exist. Return to AI Resume Builder to score and optimize your resume."
         path={location.pathname}
       />
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </a>
+      <div className="glass rounded-3xl p-8 md:p-10 w-full max-w-md text-center">
+        <p className="font-heading font-black text-7xl gradient-text mb-2">404</p>
+        <h1 className="font-heading font-bold text-2xl mb-2">Page not found</h1>
+        <p className="text-muted-foreground text-sm mb-8">
+          <span className="font-mono">{location.pathname}</span> doesn't exist or has moved.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Link to="/" className="btn-primary !text-sm inline-flex items-center justify-center">Go home</Link>
+          <Link to="/dashboard" className="glass rounded-xl px-5 py-3 text-sm font-heading font-bold hover:bg-glass-hover inline-flex items-center justify-center">Open dashboard</Link>
+        </div>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default NotFound;
+}

@@ -1,4 +1,4 @@
-import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
+import { useMemo, useState, useRef, type DragEvent, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,8 +7,19 @@ import Seo from "@/components/Seo";
 import { JOB_ROLES, JOB_ROLE_CATEGORIES } from "@/lib/job-roles";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, X, FileText, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, X, FileText, Loader2, CheckCircle2, AlertCircle, Briefcase, ChevronDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { extractJobKeywords } from "@/lib/scoring";
+import { functionError } from "@/lib/format";
+
+const MAX_JD_CHARS = 20000;
+
+/** Storage keys must be ASCII-safe; keep the extension, drop everything exotic. */
+function safeFileName(name: string): string {
+  const dot = name.lastIndexOf(".");
+  const base = (dot > 0 ? name.slice(0, dot) : name).normalize("NFKD").replace(/[^\w.-]+/g, "_").replace(/_+/g, "_").slice(0, 80) || "resume";
+  return `${base}${dot > 0 ? name.slice(dot).toLowerCase() : ""}`;
+}
 
 type StepStatus = "idle" | "active" | "done" | "error";
 
@@ -24,6 +35,9 @@ export default function UploadResume() {
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [jobRole, setJobRole] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [showJd, setShowJd] = useState(false);
+  const jdKeywords = useMemo(() => extractJobKeywords(jobDescription, 12), [jobDescription]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [steps, setSteps] = useState<StepInfo[]>([
@@ -42,7 +56,8 @@ export default function UploadResume() {
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
-    if (!validTypes.includes(f.type)) {
+    // Some browsers report an empty MIME type for .docx, so fall back to the extension.
+    if (!validTypes.includes(f.type) && !/\.(pdf|docx)$/i.test(f.name)) {
       toast.error("Please upload a PDF or DOCX file only.", {
         description: `"${f.name}" is not a supported format.`,
       });
@@ -84,14 +99,16 @@ export default function UploadResume() {
       // Step 1: Upload
       updateStep(0, "active");
       setUploadProgress(0);
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      const filePath = `${user.id}/${Date.now()}_${safeFileName(file.name)}`;
 
       // Simulate progress since supabase doesn't expose upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress((p) => Math.min(p + 15, 90));
       }, 200);
 
-      const { error: uploadError } = await supabase.storage.from("resumes").upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from("resumes").upload(filePath, file, {
+        contentType: file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+      });
       clearInterval(progressInterval);
 
       if (uploadError) {
@@ -107,19 +124,16 @@ export default function UploadResume() {
         body: { filePath, fileName: file.name },
       });
 
-      if (parseResponse.error) {
+      const parseError = await functionError(parseResponse.error, parseResponse.data);
+      if (parseError) {
         updateStep(1, "error");
-        const errMsg =
-          typeof parseResponse.error === "object" && parseResponse.error.message
-            ? parseResponse.error.message
-            : String(parseResponse.error);
-        throw new Error("Could not extract text from file. Please check file format. (" + errMsg + ")");
+        throw new Error(parseError);
       }
 
       const parseData = parseResponse.data;
-      if (!parseData || parseData.error) {
+      if (!parseData) {
         updateStep(1, "error");
-        throw new Error(parseData?.error || "Resume appears empty. Please upload a different file.");
+        throw new Error("Resume appears empty. Please upload a different file.");
       }
 
       const parsedResume = parseData.parsed;
@@ -155,26 +169,20 @@ export default function UploadResume() {
       updateStep(3, "active");
       const scoreResponse = await supabase.functions.invoke("score-resume", {
         body: {
-          parsed: parsedResume,
-          jobRoleId: jobRole,
-          resumeText: originalText,
           resumeId: resumeRow.id,
+          jobRoleId: jobRole,
+          jobDescription: jobDescription.trim() || undefined,
+          // Legacy fields for older deployments of the function.
+          parsed: parsedResume,
+          resumeText: originalText,
         },
       });
 
-      if (scoreResponse.error) {
-        updateStep(3, "error");
-        const errMsg =
-          typeof scoreResponse.error === "object" && scoreResponse.error.message
-            ? scoreResponse.error.message
-            : String(scoreResponse.error);
-        throw new Error("Analysis failed. Please try again. (" + errMsg + ")");
-      }
-
+      const scoreError = await functionError(scoreResponse.error, scoreResponse.data);
       const scoreData = scoreResponse.data;
-      if (!scoreData || scoreData.error) {
+      if (scoreError || !scoreData) {
         updateStep(3, "error");
-        throw new Error(scoreData?.error || "Analysis failed. Please try again.");
+        throw new Error(scoreError || "Analysis failed. Please try again.");
       }
 
       updateStep(3, "done");
@@ -185,9 +193,9 @@ export default function UploadResume() {
           structure_issues: scoreData.structure_issues || [],
         },
       });
-    } catch (err: any) {
+    } catch (err) {
       if (import.meta.env.DEV) console.error(err);
-      toast.error(err.message || "Something went wrong. Please try again.");
+      toast.error(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -228,6 +236,50 @@ export default function UploadResume() {
               </optgroup>
             ))}
           </select>
+        </div>
+
+        {/* Optional job description for tailored keyword matching */}
+        <div className="mb-6 glass rounded-2xl">
+          <button
+            type="button"
+            onClick={() => setShowJd((v) => !v)}
+            aria-expanded={showJd}
+            aria-controls="jd-panel"
+            className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+          >
+            <span className="flex items-center gap-2 text-sm">
+              <Briefcase className="w-4 h-4 text-accent" />
+              <span className="font-medium">Tailor to a job posting</span>
+              <span className="text-muted-foreground">(optional)</span>
+            </span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showJd ? "rotate-180" : ""}`} />
+          </button>
+          {showJd && (
+            <div id="jd-panel" className="px-4 pb-4">
+              <label htmlFor="upload-jd" className="text-xs text-muted-foreground mb-2 block">
+                Paste the job description — we'll measure keyword coverage and tailor the optimization to it.
+              </label>
+              <textarea
+                id="upload-jd"
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value.slice(0, MAX_JD_CHARS))}
+                disabled={loading}
+                rows={7}
+                placeholder="About the role… Requirements… Nice to have…"
+                className="w-full glass rounded-xl px-4 py-3 bg-transparent text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-y disabled:opacity-50"
+              />
+              <div className="flex items-start justify-between gap-3 mt-2">
+                <div className="flex flex-wrap gap-1.5" aria-label="Detected keywords">
+                  {jdKeywords.map((k) => (
+                    <span key={k} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/15 text-primary">{k}</span>
+                  ))}
+                </div>
+                <span className="text-[11px] text-muted-foreground shrink-0 font-mono">
+                  {jobDescription.length.toLocaleString()}/{MAX_JD_CHARS.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Upload zone */}
@@ -359,7 +411,7 @@ export default function UploadResume() {
                     {steps[activeStepIndex]?.label || "Processing..."}
                   </>
                 ) : (
-                  <>🚀 Analyze My Resume</>
+                  <>🚀 {jobDescription.trim() ? "Analyze Against This Job" : "Analyze My Resume"}</>
                 )}
               </button>
             </motion.div>

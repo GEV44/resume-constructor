@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,44 +6,67 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import UploadResume from "./pages/UploadResume";
-import AnalysisResult from "./pages/AnalysisResult";
-import Analyses from "./pages/Analyses";
-import Optimizations from "./pages/Optimizations";
-import Profile from "./pages/Profile";
-import AdminDashboard from "./pages/AdminDashboard";
-import NotFound from "./pages/NotFound";
+
+// Every route except the landing page is code-split so first paint stays small.
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const UploadResume = lazy(() => import("./pages/UploadResume"));
+const AnalysisResult = lazy(() => import("./pages/AnalysisResult"));
+const Analyses = lazy(() => import("./pages/Analyses"));
+const Optimizations = lazy(() => import("./pages/Optimizations"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background" role="status" aria-label="Loading">
+    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+const protectedRoutes = [
+  { path: "/dashboard", element: <Dashboard /> },
+  { path: "/dashboard/upload", element: <UploadResume /> },
+  { path: "/dashboard/analysis/:id", element: <AnalysisResult /> },
+  { path: "/dashboard/analyses", element: <Analyses /> },
+  { path: "/dashboard/optimizations", element: <Optimizations /> },
+  { path: "/dashboard/profile", element: <Profile /> },
+  { path: "/dashboard/admin", element: <AdminDashboard /> },
+];
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/upload" element={<ProtectedRoute><UploadResume /></ProtectedRoute>} />
-            <Route path="/dashboard/analysis/:id" element={<ProtectedRoute><AnalysisResult /></ProtectedRoute>} />
-            <Route path="/dashboard/analyses" element={<ProtectedRoute><Analyses /></ProtectedRoute>} />
-            <Route path="/dashboard/optimizations" element={<ProtectedRoute><Optimizations /></ProtectedRoute>} />
-            <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/dashboard/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                {protectedRoutes.map(({ path, element }) => (
+                  <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
+                ))}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

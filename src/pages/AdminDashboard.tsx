@@ -10,6 +10,8 @@ import {
   Shield, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate, formatRole, gradeColor } from "@/lib/format";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface Stats {
   totalUsers: number;
@@ -29,73 +31,72 @@ export default function AdminDashboard() {
     totalUsers: 0, totalResumes: 0, totalAnalyses: 0,
     totalOptimizations: 0, avgScore: 0, topRoles: [],
   });
-  const [recentUploads, setRecentUploads] = useState<any[]>([]);
-  const [recentAnalyses, setRecentAnalyses] = useState<any[]>([]);
+  const [recentUploads, setRecentUploads] = useState<Pick<Tables<"resumes">, "id" | "file_name" | "created_at">[]>([]);
+  const [recentAnalyses, setRecentAnalyses] = useState<Tables<"analyses">[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    checkAdmin();
-  }, [user]);
+    const fetchData = async () => {
+      try {
+        const [profiles, resumeCount, analysisCount, resumes, analyses, optimizations] = await Promise.all([
+          supabase.from("profiles").select("id", { count: "exact", head: true }),
+          supabase.from("resumes").select("id", { count: "exact", head: true }),
+          supabase.from("analyses").select("id", { count: "exact", head: true }),
+          supabase.from("resumes").select("id, file_name, created_at").order("created_at", { ascending: false }).limit(20),
+          supabase.from("analyses").select("*").order("created_at", { ascending: false }).limit(500),
+          supabase.from("optimized_resumes").select("id", { count: "exact", head: true }),
+        ]);
 
-  const checkAdmin = async () => {
-    const { data } = await supabase
+        const allAnalyses = analyses.data || [];
+        const avg = allAnalyses.length > 0
+          ? Math.round(allAnalyses.reduce((s, a) => s + a.overall_score, 0) / allAnalyses.length)
+          : 0;
+
+        // Count roles
+        const roleCounts: Record<string, number> = {};
+        for (const a of allAnalyses) {
+          roleCounts[a.job_role] = (roleCounts[a.job_role] || 0) + 1;
+        }
+        const topRoles = Object.entries(roleCounts)
+          .map(([role, count]) => ({ role, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        setStats({
+          totalUsers: profiles.count || 0,
+          totalResumes: resumeCount.count || 0,
+          totalAnalyses: analysisCount.count || 0,
+          totalOptimizations: optimizations.count || 0,
+          avgScore: avg,
+          topRoles,
+        });
+
+        setRecentUploads(resumes.data || []);
+        setRecentAnalyses(allAnalyses.slice(0, 10));
+      } catch (err) {
+        if (import.meta.env.DEV) console.error(err);
+        toast.error("Failed to load admin data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .eq("role", "admin")
-      .maybeSingle();
-
-    if (!data) {
-      toast.error("Access denied. Admin only.");
-      navigate("/dashboard");
-      return;
-    }
-    setIsAdmin(true);
-    fetchData();
-  };
-
-  const fetchData = async () => {
-    try {
-      const [profiles, resumes, analyses, optimizations] = await Promise.all([
-        supabase.from("profiles").select("*"),
-        supabase.from("resumes").select("*").order("created_at", { ascending: false }).limit(20),
-        supabase.from("analyses").select("*").order("created_at", { ascending: false }).limit(50),
-        supabase.from("optimized_resumes").select("id", { count: "exact", head: true }),
-      ]);
-
-      const allAnalyses = analyses.data || [];
-      const avg = allAnalyses.length > 0
-        ? Math.round(allAnalyses.reduce((s, a) => s + a.overall_score, 0) / allAnalyses.length)
-        : 0;
-
-      // Count roles
-      const roleCounts: Record<string, number> = {};
-      for (const a of allAnalyses) {
-        roleCounts[a.job_role] = (roleCounts[a.job_role] || 0) + 1;
-      }
-      const topRoles = Object.entries(roleCounts)
-        .map(([role, count]) => ({ role, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      setStats({
-        totalUsers: (profiles.data || []).length,
-        totalResumes: (resumes.data || []).length,
-        totalAnalyses: allAnalyses.length,
-        totalOptimizations: optimizations.count || 0,
-        avgScore: avg,
-        topRoles,
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) {
+          toast.error("Access denied. Admin only.");
+          navigate("/dashboard");
+          return;
+        }
+        setIsAdmin(true);
+        fetchData();
       });
-
-      setRecentUploads(resumes.data || []);
-      setRecentAnalyses(allAnalyses.slice(0, 10));
-    } catch (err) {
-      if (import.meta.env.DEV) console.error(err);
-      toast.error("Failed to load admin data.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, navigate]);
 
   if (!isAdmin && !loading) return null;
 
@@ -109,7 +110,6 @@ export default function AdminDashboard() {
     );
   }
 
-  const formatRole = (r: string) => r.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
   return (
     <DashboardLayout>
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
                     <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                        style={{ width: `${Math.min(100, (r.count / stats.totalAnalyses) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (r.count / (stats.topRoles[0]?.count || 1)) * 100)}%` }}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground w-8 text-right">{r.count}</span>
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{r.file_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {formatDate(r.created_at, true)}
                     </p>
                   </div>
                   <Eye className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -204,14 +204,12 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-sm font-medium">{formatRole(a.job_role)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {formatDate(a.created_at, true)}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-heading font-bold text-sm">{a.overall_score}%</p>
-                    <span className={`text-[10px] font-bold ${
-                      a.grade === "A" ? "text-accent" : a.grade === "B" ? "text-primary" : a.grade === "C" ? "text-secondary" : "text-destructive"
-                    }`}>Grade {a.grade}</span>
+                    <span className={`text-[10px] font-bold ${gradeColor(a.grade)}`}>Grade {a.grade}</span>
                   </div>
                 </div>
               ))}

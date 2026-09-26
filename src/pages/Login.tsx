@@ -46,6 +46,7 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full glass rounded-xl px-4 py-3 bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
               placeholder="you@example.com"
+              autoComplete="email"
               required
             />
           </div>
@@ -58,8 +59,12 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full glass rounded-xl px-4 py-3 bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
               placeholder="••••••••"
+              autoComplete="current-password"
               required
             />
+            <div className="flex justify-end mt-2">
+              <Link to="/forgot-password" className="text-xs text-accent hover:underline">Forgot password?</Link>
+            </div>
           </div>
           <button type="submit" disabled={submitting} className="btn-primary w-full text-center disabled:opacity-50">
             {submitting ? "Signing in..." : "Sign In"}

@@ -12,12 +12,8 @@ const pages = [
   { loc: "/", priority: "1.0", changefreq: "weekly" },
   { loc: "/login", priority: "0.5", changefreq: "monthly" },
   { loc: "/signup", priority: "0.7", changefreq: "monthly" },
-  { loc: "/dashboard", priority: "0.6", changefreq: "weekly" },
-  { loc: "/dashboard/upload", priority: "0.6", changefreq: "weekly" },
-  { loc: "/dashboard/analyses", priority: "0.6", changefreq: "weekly" },
-  { loc: "/dashboard/optimizations", priority: "0.6", changefreq: "weekly" },
-  { loc: "/dashboard/profile", priority: "0.4", changefreq: "monthly" },
 ];
+// Dashboard routes require sign-in, so they are kept out of the sitemap and disallowed below.
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -33,20 +29,10 @@ ${pages
 </urlset>
 `;
 
-const robots = `User-agent: Googlebot
+const robots = `User-agent: *
 Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
-Allow: /
+Disallow: /dashboard
+Disallow: /reset-password
 
 Sitemap: ${siteUrl}/sitemap.xml
 `;

@@ -67,6 +67,7 @@ export default function Signup() {
               onChange={(e) => setName(e.target.value)}
               className="w-full glass rounded-xl px-4 py-3 bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
               placeholder="John Doe"
+              autoComplete="name"
               required
             />
           </div>
@@ -79,6 +80,7 @@ export default function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full glass rounded-xl px-4 py-3 bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
               placeholder="you@example.com"
+              autoComplete="email"
               required
             />
           </div>
@@ -91,6 +93,7 @@ export default function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full glass rounded-xl px-4 py-3 bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
               placeholder="Min 8 characters"
+              autoComplete="new-password"
               required
               minLength={8}
             />

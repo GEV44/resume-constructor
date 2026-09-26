@@ -22,14 +22,18 @@ export type Database = {
           grade: string
           id: string
           impact_score: number
+          job_description: string | null
+          job_match: Json | null
           job_role: string
           missing_skills: Json
           overall_score: number
+          problems: Json
           project_score: number
           recommendations: Json
           resume_id: string
           skill_score: number
           strengths: Json
+          structure_issues: Json
           user_id: string
         }
         Insert: {
@@ -39,14 +43,18 @@ export type Database = {
           grade?: string
           id?: string
           impact_score?: number
+          job_description?: string | null
+          job_match?: Json | null
           job_role: string
           missing_skills?: Json
           overall_score?: number
+          problems?: Json
           project_score?: number
           recommendations?: Json
           resume_id: string
           skill_score?: number
           strengths?: Json
+          structure_issues?: Json
           user_id: string
         }
         Update: {
@@ -56,14 +64,18 @@ export type Database = {
           grade?: string
           id?: string
           impact_score?: number
+          job_description?: string | null
+          job_match?: Json | null
           job_role?: string
           missing_skills?: Json
           overall_score?: number
+          problems?: Json
           project_score?: number
           recommendations?: Json
           resume_id?: string
           skill_score?: number
           strengths?: Json
+          structure_issues?: Json
           user_id?: string
         }
         Relationships: [
@@ -87,6 +99,7 @@ export type Database = {
           job_role: string
           optimized_text: string
           resume_id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -99,6 +112,7 @@ export type Database = {
           job_role: string
           optimized_text?: string
           resume_id: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -111,6 +125,7 @@ export type Database = {
           job_role?: string
           optimized_text?: string
           resume_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [

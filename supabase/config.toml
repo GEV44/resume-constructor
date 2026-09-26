@@ -1,7 +1,14 @@
 project_id = "njijtnlmzvymzlmwvnaz"
 
+# These functions authenticate the caller themselves (see _shared/http.ts requireUser).
+[functions.parse-resume]
+verify_jwt = false
+
 [functions.score-resume]
 verify_jwt = false
 
 [functions.optimize-resume]
+verify_jwt = false
+
+[functions.delete-account]
 verify_jwt = false

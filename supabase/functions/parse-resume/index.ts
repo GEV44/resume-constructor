@@ -1,237 +1,138 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { encodeBase64 } from "jsr:@std/encoding@1/base64";
+import JSZip from "npm:jszip@3.10.1";
+import { adminClient, enforceHourlyLimit, handle, HttpError, json, readJson, requireUser } from "../_shared/http.ts";
+import { callTool, todayLine } from "../_shared/ai.ts";
+import type { ParsedResume } from "../_shared/scoring.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+const MAX_BYTES = 5 * 1024 * 1024;
+
+const stringArray = { type: "array", items: { type: "string" } };
+const PARSE_SCHEMA = {
+  type: "object",
+  properties: {
+    contact: {
+      type: "object",
+      properties: {
+        name: { type: "string" }, email: { type: "string" }, phone: { type: "string" }, location: { type: "string" },
+        linkedin: { type: "string" }, github: { type: "string" }, website: { type: "string" },
+      },
+      required: ["name", "email", "phone"],
+    },
+    summary: { type: "string", description: "The candidate's own summary/objective, verbatim. Empty if absent." },
+    education: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { degree: { type: "string" }, institution: { type: "string" }, year: { type: "string" }, field: { type: "string" } },
+        required: ["degree", "institution", "year", "field"],
+      },
+    },
+    skills: stringArray,
+    tools: stringArray,
+    experience: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          company: { type: "string" }, role: { type: "string" }, duration: { type: "string" },
+          years: { type: "number", description: "Length of this position in years (decimals allowed)" },
+          responsibilities: { ...stringArray, description: "Each bullet verbatim" },
+        },
+        required: ["company", "role", "duration", "years", "responsibilities"],
+      },
+    },
+    projects: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { name: { type: "string" }, description: { type: "string" }, technologies: stringArray },
+        required: ["name", "description", "technologies"],
+      },
+    },
+    certifications: stringArray,
+    languages: { ...stringArray, description: "Spoken languages with proficiency if stated" },
+    total_years_experience: { type: "number", description: "Total professional experience in years, overlapping periods counted once" },
+    quantified_metrics: { ...stringArray, description: "Every quantified achievement phrase (numbers, %, money, time)" },
+    extracted_text: { type: "string", description: "The full plain text of the resume, preserving reading order" },
+  },
+  required: ["contact", "summary", "education", "skills", "tools", "experience", "projects", "certifications", "languages", "total_years_experience", "quantified_metrics", "extracted_text"],
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+const SYSTEM = `${todayLine()}
 
-  try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+You are a precise resume parser. Extract structured data exactly as written — never infer, embellish or invent anything.
+- Copy bullets, titles, company names and dates verbatim.
+- Put programming languages, methods and domain skills in "skills"; named software, platforms and libraries in "tools".
+- If a field is missing, return an empty string or empty array.`;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
-    const { filePath, fileName } = await req.json();
-    if (typeof filePath !== "string" || typeof fileName !== "string") {
-      return new Response(JSON.stringify({ error: "Invalid request" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-    // Verify the caller owns the requested file (path is prefixed with their user id)
-    if (!filePath.startsWith(`${user.id}/`)) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
-    // Download the file from storage
-    const { data: fileData, error: downloadError } = await supabase.storage.from("resumes").download(filePath);
-    if (downloadError) throw new Error("Failed to download file: " + downloadError.message);
-
-    const arrayBuffer = await fileData.arrayBuffer();
-    const uint8 = new Uint8Array(arrayBuffer);
-    const b64 = base64Encode(uint8);
-
-    const isPdf = fileName.toLowerCase().endsWith(".pdf");
-    const mimeType = isPdf ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-    // Send the file as base64 to Gemini for multimodal parsing
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `Today is June 2026. Use 2025–2026 resume and job market standards. Do not reference 2024 as the current year.
-
-You are a resume parser. Extract structured data from the resume document. Return ONLY valid JSON with this exact structure:
-{
-  "contact": {"name": "", "email": "", "phone": ""},
-  "education": [{"degree": "", "institution": "", "year": "", "field": ""}],
-  "skills": [],
-  "tools": [],
-  "experience": [{"company": "", "role": "", "duration": "", "years": 0, "responsibilities": []}],
-  "projects": [{"name": "", "description": "", "technologies": []}],
-  "certifications": [],
-  "total_years_experience": 0,
-  "quantified_metrics": []
+/** Plain text from a .docx (Office Open XML) without any external service. */
+async function docxToText(bytes: Uint8Array): Promise<string> {
+  const zip = await JSZip.loadAsync(bytes);
+  const xml = await zip.file("word/document.xml")?.async("string");
+  if (!xml) throw new HttpError(422, "This DOCX file has no readable document body.");
+  return xml
+    .replace(/<w:tab\/>/g, "\t")
+    .replace(/<w:br[^>]*\/>/g, "\n")
+    .replace(/<\/w:p>/g, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "'").replace(/&amp;/g, "&")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
-Sort skills and tools alphabetically. Extract quantified metrics (numbers, percentages, dollar amounts). Calculate total years from experience entries. If data is missing, use empty arrays/strings.`
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Parse this resume document and extract all structured information:" },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${b64}`
-                }
-              }
-            ]
-          }
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "parse_resume",
-            description: "Parse a resume into structured JSON",
-            parameters: {
-              type: "object",
-              properties: {
-                contact: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    email: { type: "string" },
-                    phone: { type: "string" }
-                  },
-                  required: ["name", "email", "phone"]
-                },
-                education: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      degree: { type: "string" },
-                      institution: { type: "string" },
-                      year: { type: "string" },
-                      field: { type: "string" }
-                    },
-                    required: ["degree", "institution", "year", "field"]
-                  }
-                },
-                skills: { type: "array", items: { type: "string" } },
-                tools: { type: "array", items: { type: "string" } },
-                experience: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      company: { type: "string" },
-                      role: { type: "string" },
-                      duration: { type: "string" },
-                      years: { type: "number" },
-                      responsibilities: { type: "array", items: { type: "string" } }
-                    },
-                    required: ["company", "role", "duration", "years", "responsibilities"]
-                  }
-                },
-                projects: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      name: { type: "string" },
-                      description: { type: "string" },
-                      technologies: { type: "array", items: { type: "string" } }
-                    },
-                    required: ["name", "description", "technologies"]
-                  }
-                },
-                certifications: { type: "array", items: { type: "string" } },
-                total_years_experience: { type: "number" },
-                quantified_metrics: { type: "array", items: { type: "string" } },
-                extracted_text: { type: "string", description: "The full plain text extracted from the resume" }
-              },
-              required: ["contact", "education", "skills", "tools", "experience", "projects", "certifications", "total_years_experience", "quantified_metrics", "extracted_text"]
-            }
-          }
-        }],
-        tool_choice: { type: "function", function: { name: "parse_resume" } },
-      }),
-    });
 
-    if (!aiResponse.ok) {
-      const status = aiResponse.status;
-      const body = await aiResponse.text();
-      console.error("AI response error:", status, body);
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      throw new Error("AI parsing failed: " + body.substring(0, 200));
-    }
+type ParseOutput = ParsedResume & { extracted_text?: string };
 
-    const aiData = await aiResponse.json();
-    let parsed;
-    let extractedText = "";
+Deno.serve(handle("parse-resume", async (req) => {
+  const supabase = adminClient();
+  const user = await requireUser(req, supabase);
+  await enforceHourlyLimit(supabase, "resumes", user.id, "PARSE_LIMIT_PER_HOUR", 20);
 
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall) {
-      parsed = JSON.parse(toolCall.function.arguments);
-      extractedText = parsed.extracted_text || "";
-      delete parsed.extracted_text;
-    } else {
-      // Fallback: try to extract JSON from content
-      const content = aiData.choices?.[0]?.message?.content || "";
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
-        extractedText = parsed.extracted_text || content;
-        delete parsed.extracted_text;
-      }
-    }
+  const { filePath, fileName } = await readJson<{ filePath?: unknown; fileName?: unknown }>(req);
+  if (typeof filePath !== "string" || typeof fileName !== "string") throw new HttpError(400, "Invalid request");
+  if (!filePath.startsWith(`${user.id}/`) || filePath.includes("..")) throw new HttpError(403, "Forbidden");
 
-    if (!parsed) throw new Error("Failed to parse resume content");
+  const { data: file, error } = await supabase.storage.from("resumes").download(filePath);
+  if (error || !file) throw new HttpError(404, "Uploaded file not found");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (bytes.byteLength === 0) throw new HttpError(422, "The file is empty.");
+  if (bytes.byteLength > MAX_BYTES) throw new HttpError(413, "File must be under 5MB.");
 
-    // Sort skills and tools alphabetically for determinism
-    if (parsed.skills) parsed.skills.sort();
-    if (parsed.tools) parsed.tools.sort();
+  // Trust the file signature, not the name: %PDF or a ZIP container (DOCX).
+  const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+  const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b;
+  if (!isPdf && !isZip) throw new HttpError(415, "Only PDF and DOCX files are supported.");
 
-    // If we didn't get extracted text, create a summary from parsed data
-    if (!extractedText) {
-      const parts = [];
-      if (parsed.contact?.name) parts.push(parsed.contact.name);
-      if (parsed.skills?.length) parts.push("Skills: " + parsed.skills.join(", "));
-      if (parsed.experience?.length) {
-        parts.push(parsed.experience.map((e: any) => `${e.role} at ${e.company} (${e.duration}): ${e.responsibilities.join("; ")}`).join("\n"));
-      }
-      extractedText = parts.join("\n\n");
-    }
+  const user_content = isPdf
+    ? [
+      { type: "text" as const, text: "Parse this resume document." },
+      { type: "image_url" as const, image_url: { url: `data:application/pdf;base64,${encodeBase64(bytes)}` } },
+    ]
+    : `Parse this resume (text extracted from a DOCX file):\n\n${(await docxToText(bytes)).slice(0, 60_000)}`;
 
-    console.log("Parse successful:", { skills: parsed.skills?.length, experience: parsed.experience?.length });
+  const parsed = await callTool<ParseOutput>({
+    system: SYSTEM,
+    user: user_content,
+    tool: { name: "parse_resume", description: "Return the resume as structured data", parameters: PARSE_SCHEMA },
+    temperature: 0,
+  });
 
-    return new Response(JSON.stringify({ parsed, text: extractedText }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
-  } catch (e) {
-    console.error("parse-resume error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+  let text = parsed.extracted_text ?? "";
+  delete parsed.extracted_text;
+  const collator = new Intl.Collator("en", { sensitivity: "base" });
+  parsed.skills = [...new Set(parsed.skills ?? [])].sort(collator.compare);
+  parsed.tools = [...new Set(parsed.tools ?? [])].sort(collator.compare);
+
+  if (!text) {
+    text = [
+      parsed.contact?.name,
+      parsed.summary,
+      parsed.skills.length ? `Skills: ${parsed.skills.join(", ")}` : "",
+      ...(parsed.experience ?? []).map((e) => `${e.role} at ${e.company} (${e.duration}): ${(e.responsibilities ?? []).join("; ")}`),
+    ].filter(Boolean).join("\n\n");
   }
-});
+  if (!text.trim() && (parsed.experience ?? []).length === 0 && parsed.skills.length === 0) {
+    throw new HttpError(422, "We couldn't read any text from this file. If it's a scanned image, export it as a text PDF or DOCX.");
+  }
+
+  return json(req, { parsed, text });
+}));
