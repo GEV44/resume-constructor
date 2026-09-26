@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
-  ArrowRight, Github, PenLine, LayoutTemplate, ChevronRight,
+  ArrowRight, Github, Linkedin, PenLine, LayoutTemplate, ChevronRight,
   Upload, Wand2, Download,
 } from "lucide-react";
 import Seo from "@/components/Seo";
@@ -56,6 +56,7 @@ export default function Landing() {
       name: "AI Resume Builder",
       url: `${SITE_URL}/`,
       description: "AI-powered resume analysis and optimization with deterministic scoring across 36 job roles.",
+      sameAs: ["https://github.com/GEV44", "https://www.linkedin.com/in/gevorg-hovhannisyan-arm/"],
     },
     {
       "@context": "https://schema.org",
@@ -490,6 +491,15 @@ export default function Landing() {
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <Github className="w-5 h-5" />
+            </a>
+            <a
+              href="https://www.linkedin.com/in/gevorg-hovhannisyan-arm/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Linkedin className="w-5 h-5" />
             </a>
           </div>
         </div>
