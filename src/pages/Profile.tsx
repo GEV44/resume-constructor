@@ -145,7 +145,7 @@ export default function Profile() {
         <p className="text-muted-foreground mb-8">Manage your account details.</p>
 
         <div className="glass rounded-2xl p-6 mb-6">
-          <h2 className="font-heading font-bold mb-4">Account Info</h2>
+          <h2 className="font-heading font-bold text-lg mb-4">Account Info</h2>
           <div className="space-y-4">
             <div>
               <label htmlFor="profile-email" className={labelClass}>Email</label>
@@ -186,7 +186,7 @@ export default function Profile() {
         </div>
 
         <div className="glass rounded-2xl p-6 mb-6">
-          <h2 className="font-heading font-bold mb-4">Change Password</h2>
+          <h2 className="font-heading font-bold text-lg mb-4">Change Password</h2>
           <div className="space-y-4">
             <div>
               <label htmlFor="profile-new-password" className={labelClass}>New Password</label>
@@ -222,7 +222,7 @@ export default function Profile() {
         </div>
 
         <div className="glass rounded-2xl p-6 mb-6">
-          <h2 className="font-heading font-bold mb-2">Your Data</h2>
+          <h2 className="font-heading font-bold text-lg mb-2">Your Data</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Download a copy of everything we store about you — your profile, uploaded resumes, analyses and optimizations — as a JSON file.
           </p>
@@ -233,7 +233,7 @@ export default function Profile() {
         </div>
 
         <div className="glass rounded-2xl p-6 border border-destructive/50">
-          <h2 className="font-heading font-bold mb-2 text-destructive flex items-center gap-2">
+          <h2 className="font-heading font-bold text-lg mb-2 text-destructive flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Danger Zone
           </h2>
           <p className="text-sm text-muted-foreground mb-4">

@@ -10,6 +10,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
 
 // Every route except the landing page is code-split so first paint stays small.
+const AtsChecker = lazy(() => import("./pages/AtsChecker"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
@@ -52,6 +53,7 @@ const App = () => (
             <Suspense fallback={<PageFallback />}>
               <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/ats-checker" element={<AtsChecker />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />

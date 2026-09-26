@@ -10,6 +10,7 @@ const siteUrl = (
 
 const pages = [
   { loc: "/", priority: "1.0", changefreq: "weekly" },
+  { loc: "/ats-checker", priority: "0.9", changefreq: "monthly" },
   { loc: "/login", priority: "0.5", changefreq: "monthly" },
   { loc: "/signup", priority: "0.7", changefreq: "monthly" },
 ];

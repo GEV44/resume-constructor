@@ -268,6 +268,9 @@ export default function Optimizations() {
   };
 
   const delta = (i: Pick<Item, "after_score" | "before_score">) => i.after_score - i.before_score;
+  // The saved score is authoritative; the live re-score only takes over once the user edits.
+  const shownScore = selected ? (dirty && liveScore !== null ? liveScore : selected.after_score) : 0;
+  const shownDelta = selected ? shownScore - selected.before_score : 0;
   const deltaLabel = (d: number) => (d > 0 ? `+${d} pts` : d === 0 ? "±0 pts" : `${d} pts`);
 
   const tabs: { id: Tab; label: string }[] = [
@@ -342,9 +345,9 @@ export default function Optimizations() {
                   {/* Score */}
                   <div className="glass rounded-2xl p-6 border border-accent/20">
                     <div className="flex items-center justify-between mb-4 gap-3">
-                      <h2 className="font-heading font-bold text-lg">ATS Score (re-scored)</h2>
-                      <div className={`flex items-center gap-2 font-heading font-bold text-xl ${delta(selected) > 0 ? "text-accent" : "text-muted-foreground"}`}>
-                        <TrendingUp className="w-5 h-5" /> {deltaLabel((liveScore ?? selected.after_score) - selected.before_score)}
+                      <h2 className="font-heading font-bold text-lg">ATS Score</h2>
+                      <div className={`flex items-center gap-2 font-heading font-bold text-xl ${shownDelta > 0 ? "text-accent" : "text-muted-foreground"}`}>
+                        <TrendingUp className="w-5 h-5" /> {deltaLabel(shownDelta)}
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 items-center">
@@ -355,7 +358,7 @@ export default function Optimizations() {
                       <div className="h-[2px] bg-gradient-to-r from-destructive via-primary to-accent rounded-full" />
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground mb-1">{dirty ? "Current (unsaved)" : "Optimized"}</p>
-                        <p className="font-heading font-bold text-2xl text-accent">{liveScore ?? selected.after_score}</p>
+                        <p className="font-heading font-bold text-2xl text-accent">{shownScore}</p>
                       </div>
                     </div>
                     {placeholderCount > 0 && (
