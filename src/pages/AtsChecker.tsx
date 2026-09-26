@@ -112,7 +112,7 @@ export default function AtsChecker() {
             Free <span className="gradient-text">ATS Resume Checker</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Paste your resume, pick a target role and optionally a job description. You get the same deterministic score our full app uses — same input, same score, every time.
+            Paste your resume, pick a target role and optionally a job description. You get the same deterministic score our full app uses — same input, same score. Ongoing roles ("Present") are counted up to today.
           </p>
         </div>
 

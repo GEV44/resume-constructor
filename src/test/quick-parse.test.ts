@@ -18,7 +18,7 @@ describe("yearsFromRanges", () => {
 });
 
 describe("quickParse", () => {
-  const parsed = quickParse(SAMPLE_RESUME);
+  const parsed = quickParse(SAMPLE_RESUME, NOW);
 
   it("splits sections from headings", () => {
     expect(parsed.contact?.name).toBe("Alex Morgan");
@@ -37,6 +37,12 @@ describe("quickParse", () => {
     const r = scoreResume(parsed, "frontend-engineer", SAMPLE_RESUME);
     expect(r.missing_skills).toEqual([]);
     expect(r.overall_score).toBeGreaterThan(60);
+  });
+
+  it("measures ongoing roles against the reference date, so results are reproducible", () => {
+    expect(quickParse(SAMPLE_RESUME, NOW)).toEqual(quickParse(SAMPLE_RESUME, NOW));
+    const later = quickParse(SAMPLE_RESUME, new Date(2027, 8, 1));
+    expect(later.total_years_experience! - parsed.total_years_experience!).toBeCloseTo(1, 1);
   });
 
   it("copes with unstructured text", () => {

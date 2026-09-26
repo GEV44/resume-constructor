@@ -59,7 +59,11 @@ export function yearsFromRanges(text: string, now = new Date()): number {
 
 const splitList = (line: string) => line.split(/[,;|•·]|\s\/\s/).map((s) => s.replace(/^[^:]{1,25}:\s*/, "").trim()).filter((s) => s && s.length <= 40);
 
-export function quickParse(text: string): ParsedResume {
+/**
+ * Parse pasted resume text. `now` is the reference date for "Present" ranges;
+ * pass a fixed date for reproducible results (ongoing roles grow over time).
+ */
+export function quickParse(text: string, now: Date = new Date()): ParsedResume {
   const lines = String(text ?? "").replace(/\r/g, "").split("\n").map((l) => l.trim());
   const sections: Record<Section, string[]> = { header: [], summary: [], experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], other: [] };
   let current: Section = "header";
@@ -97,7 +101,7 @@ export function quickParse(text: string): ParsedResume {
       .map((l) => ({ degree: l, institution: "", year: l.match(/(19|20)\d{2}/)?.[0] ?? "", field: l })),
     certifications: sections.certifications.map((l) => l.replace(BULLET_RE, "")),
     languages: sections.languages.flatMap(splitList),
-    total_years_experience: yearsFromRanges(experienceText || text),
+    total_years_experience: yearsFromRanges(experienceText || text, now),
     quantified_metrics: [],
   };
 }
