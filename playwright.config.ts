@@ -14,7 +14,8 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    // Accessibility audits are layout-independent, so they run once on desktop.
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testIgnore: /a11y\.spec\.ts/ },
   ],
   webServer: {
     command: `npm run build && npx vite preview --port ${PORT} --strictPort`,

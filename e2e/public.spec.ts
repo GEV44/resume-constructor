@@ -39,6 +39,29 @@ test.describe("free ATS checker", () => {
     expect(apiCalls, "the checker must not send resume data anywhere").toEqual([]);
   });
 
+  for (const file of ["resume.pdf", "resume.docx"]) {
+    test(`extracts and scores an uploaded ${file.split(".")[1].toUpperCase()} without uploading it`, async ({ page }) => {
+      const apiCalls: string[] = [];
+      page.on("request", (r) => { if (/supabase\.co|functions\/v1/.test(r.url())) apiCalls.push(r.url()); });
+      await page.goto("/ats-checker");
+      await page.getByLabel("Upload resume file").setInputFiles(`e2e/fixtures/${file}`);
+      await expect(page.getByRole("status")).toContainText(`Extracted text from ${file}`);
+      const text = await page.getByLabel("Your resume").inputValue();
+      expect(text).toContain("Alex Morgan");
+      expect(text).toContain("120k-line JavaScript codebase");
+      await page.getByRole("button", { name: /Check My Resume/i }).click();
+      await expect(page.getByRole("img", { name: /ATS score \d+ out of 100/ })).toBeVisible();
+      await expect(page.locator("#results")).toContainText("TypeScript");
+      expect(apiCalls).toEqual([]);
+    });
+  }
+
+  test("rejects unsupported files with a helpful message", async ({ page }) => {
+    await page.goto("/ats-checker");
+    await page.getByLabel("Upload resume file").setInputFiles({ name: "photo.png", mimeType: "image/png", buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0, 0, 0]) });
+    await expect(page.getByRole("status")).toContainText("PDF, DOCX or TXT");
+  });
+
   test("gives the same score for the same input", async ({ page }) => {
     await page.goto("/ats-checker");
     await page.getByRole("button", { name: /Use a sample/i }).click();

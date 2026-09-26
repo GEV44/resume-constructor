@@ -43,11 +43,13 @@
 |:---:|---|---|
 | 📄 | **Resume Parsing** | AI extracts contact details, experience, skills, projects and education. DOCX text is extracted on the server; file signatures are checked. |
 | 📊 | **Deterministic Scoring** | One transparent engine shared by the browser and the server. Weights differ by role category. Skill aliases (JS, k8s, Postgres…) are recognised. |
+| 🆓 | **Free ATS Checker** | No signup. Upload a PDF or DOCX, or paste text, and get a score, missing keywords and fixes. Text is extracted and scored **entirely in your browser**. |
 | 🎯 | **Job-Description Match** | Paste a job posting to see which hard-skill keywords you cover and which you're missing. The match counts for 30% of the score. |
 | 🤖 | **Honest AI Optimization** | Rewrites are merged back into your original facts by position, so employers, titles, dates and degrees can't change. A new skill is kept only if your resume already shows evidence of it. |
 | ✍️ | **In-app Editor** | Fill in `[X]` placeholders and tweak bullets while the ATS score updates live. |
 | 🧾 | **ATS-Readable Exports** | Real-text PDF, Word (.docx) and plain text, plus 10 designed PDF templates for printing and email. |
 | 📈 | **Progress Tracking** | Score-trend chart, full analysis history, and a before/after comparison re-scored by the same engine. |
+| 📱 | **Installable & Accessible** | PWA manifest and icons, WCAG 2.2 AA checked on every screen, and the reduced-motion preference respected. |
 | 🔒 | **Privacy & Security** | Row-level security, per-user hourly AI limits, security headers, one-click data export and account deletion. |
 
 ## 📸 Screenshots
@@ -122,7 +124,7 @@ Component weights depend on the role category. Tech roles, for example, weight p
 | **Backend** | Supabase: Auth, Postgres with RLS, Storage, Edge Functions (Deno) |
 | **AI** | Any OpenAI-compatible endpoint. Default: Google Gemini Flash via the Lovable AI Gateway |
 | **Exports** | jsPDF (text PDF) · docx (Word) · html2canvas (designed templates) |
-| **Quality** | Vitest (unit) · Playwright (E2E on desktop and mobile) · ESLint · `deno check` · GitHub Actions CI · Dependabot |
+| **Quality** | Vitest (unit) · Playwright (E2E on desktop and mobile) · axe-core (WCAG 2.2 AA) · ESLint · `deno check` · GitHub Actions CI · Dependabot |
 | **Hosting** | Vercel |
 
 ## 🚀 Getting Started
@@ -156,7 +158,12 @@ npm run test:e2e          # Playwright: public pages + signed-in flows against a
 npm run check:functions   # type-check edge functions (requires Deno)
 ```
 
-CI runs all three on every push and pull request. The end-to-end suite also downloads the ATS PDF and checks that it contains real text.
+CI runs all three on every push and pull request. The end-to-end suite also:
+- downloads the ATS PDF and checks that it contains real text;
+- uploads real PDF and DOCX files to the free checker and verifies that nothing leaves the browser;
+- runs **axe-core WCAG 2.2 AA audits on 13 screens**, and a serious or critical violation fails the build.
+
+**Lighthouse** (production build, simulated mobile): landing page 92 performance, 100 accessibility, 100 SEO.
 
 ## 📁 Project Structure
 

@@ -6,6 +6,7 @@ import {
   Upload, Wand2, Download, FileSearch,
 } from "lucide-react";
 import Seo from "@/components/Seo";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SITE_URL } from "@/lib/site";
 
 const features = [
@@ -37,8 +38,40 @@ const steps = [
   { icon: Download, title: "Export",   desc: "Edit, then download an ATS-readable PDF or Word file — or one of 10 designed templates." },
 ];
 
+const faqs = [
+  {
+    q: "Is the ATS score the same every time?",
+    a: "Yes. Scoring is deterministic: the same resume, role and job description always produce the same score. The AI only writes feedback and rewrites; it never decides the number.",
+  },
+  {
+    q: "Will the AI make things up on my resume?",
+    a: "No. Rewrites are merged back onto your original facts, so employers, titles, dates and degrees can't change. Skills are only kept if your resume already shows them, and missing numbers become [X] placeholders for you to fill in.",
+  },
+  {
+    q: "Can ATS software read the PDF I download?",
+    a: "Yes. The ATS PDF and Word exports contain real, selectable text in a single-column layout. The designed templates are best for printing or emailing.",
+  },
+  {
+    q: "Do I need an account to check my resume?",
+    a: "No. The free ATS checker runs entirely in your browser. Upload a PDF or DOCX, or paste text, and nothing is sent to a server. An account adds AI review, rewrites, editing and exports.",
+  },
+  {
+    q: "What happens to my data?",
+    a: "Your files and results are private to your account and protected by row-level security. You can export everything as JSON or permanently delete your account at any time.",
+  },
+  {
+    q: "Which roles are supported?",
+    a: "36 roles across Tech, Business, Finance, HR and Design, including GenAI/LLM engineering. You can also paste any job description to score against that specific posting.",
+  },
+];
+
 export default function Landing() {
   const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    },
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
@@ -69,8 +102,8 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-animated-gradient">
       <Seo
-        title="Resume Constructor — AI Resume Builder | ATS Score & 10 PDF Templates"
-        description="Free AI resume constructor: upload your resume, get ATS scores for 36 job roles, and download optimized PDFs in 10 professional templates."
+        title="AI Resume Builder — Free ATS Checker, Honest AI Rewrites & ATS-Ready PDF"
+        description="Check your resume against 36 roles or any job posting for free, rewrite it with AI that never invents facts, and export ATS-readable PDF and Word files."
         path="/"
         jsonLd={jsonLd}
       />
@@ -92,7 +125,7 @@ export default function Landing() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View source on GitHub"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1.5 -m-1.5 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Github className="w-5 h-5" />
             </a>
@@ -220,10 +253,10 @@ export default function Landing() {
                 </div>
                 <div className="mt-2 h-1.5 w-24 rounded-full bg-white/10 overflow-hidden">
                   <motion.div
-                    initial={{ width: "0%" }}
-                    animate={{ width: "94%" }}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 0.94 }}
                     transition={{ duration: 1.4, delay: 0.9, ease: "easeOut" }}
-                    className="h-full bg-gradient-to-r from-primary to-accent"
+                    className="h-full origin-left bg-gradient-to-r from-primary to-accent"
                   />
                 </div>
               </motion.div>
@@ -245,29 +278,20 @@ export default function Landing() {
                 </div>
                 <span className="flex gap-0.5 ml-1">
                   {[0, 1, 2].map((i) => (
-                    <motion.span
-                      key={i}
-                      animate={{ opacity: [0.2, 1, 0.2] }}
-                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                      className="w-1 h-1 rounded-full bg-accent"
-                    />
+                    <span key={i} className="anim-blink w-1 h-1 rounded-full bg-accent" style={{ animationDelay: `${i * 0.2}s` }} />
                   ))}
                 </span>
               </motion.div>
 
               {/* Back card (offset) */}
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute z-10 w-[260px] sm:w-[300px] h-[380px] sm:h-[440px] rounded-2xl glass border border-white/8"
+              <div
+                className="anim-float-slow absolute z-10 w-[260px] sm:w-[300px] h-[380px] sm:h-[440px] rounded-2xl glass border border-white/8"
                 style={{ transform: "translate(28px, 28px) rotate(6deg)" }}
               />
 
               {/* Main resume card */}
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="relative z-20 w-[280px] sm:w-[340px] rounded-2xl bg-gradient-to-br from-[#1a1430]/95 to-[#0f0a1f]/95 border border-white/15 shadow-[0_30px_90px_-15px_rgba(99,102,241,0.55)] backdrop-blur-xl overflow-hidden"
+              <div
+                className="anim-float relative z-20 w-[280px] sm:w-[340px] rounded-2xl bg-gradient-to-br from-[#1a1430]/95 to-[#0f0a1f]/95 border border-white/15 shadow-[0_30px_90px_-15px_rgba(99,102,241,0.55)] backdrop-blur-xl overflow-hidden"
               >
                 {/* Header band */}
                 <div className="relative p-5 sm:p-6 pb-4 border-b border-white/10">
@@ -293,11 +317,8 @@ export default function Landing() {
                     </div>
                     <div className="space-y-1.5 pl-3">
                       <div className="h-1.5 w-full rounded-full bg-white/20" />
-                      <motion.div
-                        animate={{ width: ["60%", "92%", "60%"] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="h-1.5 rounded-full bg-gradient-to-r from-primary/60 to-accent/60"
-                      />
+                      {/* scaleX (not width) keeps this loop on the compositor instead of re-laying out every frame */}
+                      <div className="anim-bar h-1.5 w-full origin-left rounded-full bg-gradient-to-r from-primary/60 to-accent/60" />
                       <div className="h-1.5 w-4/5 rounded-full bg-white/15" />
                     </div>
                   </div>
@@ -336,13 +357,11 @@ export default function Landing() {
                   </div>
                 </div>
 
-                {/* scan line */}
-                <motion.div
-                  animate={{ y: [-20, 480] }}
-                  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent pointer-events-none shadow-[0_0_12px_hsl(var(--accent))]"
+                {/* scan line — infinite loops use CSS keyframes (compositor thread, no JS per frame) */}
+                <div
+                  className="anim-scan absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent pointer-events-none shadow-[0_0_12px_hsl(var(--accent))]"
                 />
-              </motion.div>
+              </div>
 
               {/* Template chip — bottom right */}
               <motion.div
@@ -445,6 +464,26 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ────────────────────────────────────────────────────────── */}
+        <section className="py-20 md:py-28 px-4" aria-labelledby="faq-heading">
+          <div className="container mx-auto max-w-3xl">
+            <div className="text-center mb-12">
+              <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-accent mb-3">FAQ</p>
+              <h2 id="faq-heading" className="font-heading font-extrabold text-3xl md:text-5xl">
+                Questions, <span className="gradient-text">answered</span>
+              </h2>
+            </div>
+            <Accordion type="single" collapsible className="space-y-3">
+              {faqs.map((f, i) => (
+                <AccordionItem key={f.q} value={`faq-${i}`} className="glass rounded-2xl px-6 border-b-0">
+                  <AccordionTrigger className="text-left font-heading font-bold text-base hover:no-underline">{f.q}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm leading-relaxed">{f.a}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </section>
 

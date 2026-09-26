@@ -73,7 +73,7 @@ export default function Login() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-accent hover:underline">Sign up</Link>
+          <Link to="/signup" className="text-accent underline underline-offset-4 hover:text-foreground">Sign up</Link>
         </p>
       </div>
     </main>

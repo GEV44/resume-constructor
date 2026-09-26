@@ -117,7 +117,7 @@ export default function ResetPassword() {
             </p>
             <Link to="/forgot-password" className="btn-primary inline-block !text-sm">Request a New Link</Link>
             <p className="text-sm text-muted-foreground mt-6">
-              <Link to="/login" className="text-accent hover:underline">Back to login</Link>
+              <Link to="/login" className="text-accent underline underline-offset-4 hover:text-foreground">Back to login</Link>
             </p>
           </div>
         ) : (
