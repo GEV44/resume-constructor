@@ -11,6 +11,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    // Optional override for environments with a preinstalled Chromium (CI installs its own).
+    launchOptions: process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {},
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },

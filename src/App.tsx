@@ -1,9 +1,6 @@
 import { lazy, Suspense } from "react";
 import { MotionConfig } from "framer-motion";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -25,8 +22,6 @@ const Profile = lazy(() => import("./pages/Profile"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
-
 const PageFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background" role="status" aria-label="Loading">
     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -47,30 +42,25 @@ const App = () => (
   <ErrorBoundary>
     {/* Honour the OS "reduce motion" setting for every framer-motion animation. */}
     <MotionConfig reducedMotion="user">
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <Suspense fallback={<PageFallback />}>
-                <Routes>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/ats-checker" element={<AtsChecker />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  {protectedRoutes.map(({ path, element }) => (
-                    <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
-                  ))}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryClientProvider>
+      <Toaster />
+      <BrowserRouter>
+        <AuthProvider>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/ats-checker" element={<AtsChecker />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              {protectedRoutes.map(({ path, element }) => (
+                <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
+              ))}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </AuthProvider>
+      </BrowserRouter>
     </MotionConfig>
   </ErrorBoundary>
 );

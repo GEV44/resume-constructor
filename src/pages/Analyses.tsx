@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,18 +21,24 @@ export default function Analyses() {
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<Analysis | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
+  // Keyed on the id, not the user object, which is replaced on every token refresh.
+  const userId = user?.id;
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    supabase
       .from("analyses")
       .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setAnalyses(data || []);
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => { load(); }, [load]);
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setAnalyses(data || []);
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const deleteAnalysis = async () => {
     if (!pendingDelete) return;

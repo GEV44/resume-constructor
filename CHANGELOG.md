@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.0 — 2026-09-26
+
+### Changed
+- **Dependencies cut from 57 to 22.** Removed 36 unused shadcn/ui components left over from the project template,
+  the unused React Query, Radix toast and tooltip providers, and `next-themes`.
+- Upgraded framer-motion 13, eslint-plugin-react-hooks 7 (React Compiler rules), Playwright 1.63,
+  typescript-eslint 8.70, the remaining Radix primitives, and GitHub Actions v7.
+- Data loading in Analyses and Optimizations restructured so that state is only set in async callbacks. This
+  satisfies the React Compiler rules and cancels stale requests on unmount.
+
 ## 2.1.0 — 2026-09-26
 
 ### Added
