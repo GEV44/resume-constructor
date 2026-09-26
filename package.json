@@ -1,6 +1,6 @@
 {
   "name": "resume-constructor",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "AI resume builder with deterministic ATS scoring, job-description matching, honest AI rewrites and ATS-readable exports.",
   "private": true,
   "type": "module",
@@ -69,8 +69,10 @@
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.2",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "pdfjs-dist": "^6.3.289",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -86,6 +88,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/typography": "^0.5.16",

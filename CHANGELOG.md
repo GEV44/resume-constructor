@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.1.0 — 2026-09-26
+
+### Added
+- Upload a **PDF or DOCX to the free ATS checker**. Text is extracted in the browser with pdf.js and JSZip; nothing is uploaded.
+- **Accessibility gate**: axe-core WCAG 2.2 AA audits on 13 screens in CI.
+- **Installable app**: web manifest, maskable icons, SVG favicon and app shortcuts.
+- **FAQ** on the landing page, with `FAQPage` structured data.
+
+### Changed
+- Decorative loops moved from JavaScript (framer-motion) to CSS keyframes. The page background now drifts with a
+  compositor-only transform instead of repainting the whole page every frame. Landing-page Lighthouse performance went
+  from 71 to 92, with total blocking time down from 830 ms to 70 ms.
+- The reduced-motion setting is honoured across the app.
+- Accessible colour tokens: a lighter purple for text, and a darker red for solid destructive buttons, which improves
+  contrast from 3.9:1 to 6.5:1.
+
+### Fixed
+- The dashboard sidebar footer (name and Sign Out) was pushed off-screen by a transform on the page background.
+- Touch targets under 24 px, and inline links distinguished only by colour.
+
 ## 2.0.0 — 2026-09-26
 
 ### Added

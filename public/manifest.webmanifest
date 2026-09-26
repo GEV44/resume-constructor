@@ -1,0 +1,21 @@
+{
+  "name": "AI Resume Builder",
+  "short_name": "Resume AI",
+  "description": "Score your resume against any job, rewrite it with AI that never invents facts, and export ATS-readable PDF and Word files.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#1a1024",
+  "categories": ["productivity", "business"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Free ATS check", "url": "/ats-checker", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Upload resume", "url": "/dashboard/upload", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -14,6 +14,7 @@
     --popover-foreground: 0 0% 100%;
 
     --primary: 258 88% 62%;
+    --primary-text: 258 90% 72%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 230 90% 65%;
@@ -27,6 +28,7 @@
 
     --destructive: 338 100% 50%;
     --destructive-foreground: 0 0% 100%;
+    --destructive-solid: 342 80% 40%;
 
     --border: 0 0% 100% / 0.14;
     --input: 0 0% 100% / 0.14;
@@ -188,27 +190,38 @@
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* The gradients live on a fixed layer that drifts with `transform`, so the
+     animation runs on the compositor instead of repainting the page each frame.
+     (Animating background-position, or a transform on the element itself,
+     also broke position:fixed descendants such as the sidebar and navbar.) */
   .bg-animated-gradient {
-    background: 
-      radial-gradient(ellipse 80% 60% at 15% 30%, hsl(var(--primary) / 0.28) 0%, transparent 70%),
-      radial-gradient(ellipse 70% 60% at 85% 70%, hsl(var(--accent) / 0.22) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 50% at 50% 100%, hsl(var(--secondary) / 0.15) 0%, transparent 70%),
-      hsl(var(--background));
-    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-    animation: etherealFloat 25s ease-in-out infinite;
+    position: relative;
+    isolation: isolate;
+    background: hsl(var(--background));
   }
 
-  @keyframes etherealFloat {
-    0%, 100% { 
-      background-position: 0% 50%, 100% 50%, 50% 0%, 0% 0%;
-      transform: scale(1);
-    }
-    33% { 
-      background-position: 100% 0%, 0% 100%, 0% 100%, 0% 0%;
-    }
-    66% { 
-      background-position: 50% 100%, 50% 0%, 100% 50%, 0% 0%;
-    }
+  .bg-animated-gradient::before {
+    content: "";
+    position: fixed;
+    inset: -25%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 45% 35% at 30% 40%, hsl(var(--primary) / 0.28) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 35% at 70% 60%, hsl(var(--accent) / 0.22) 0%, transparent 70%),
+      radial-gradient(ellipse 35% 30% at 50% 80%, hsl(var(--secondary) / 0.15) 0%, transparent 70%);
+    animation: ethereal-drift 25s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes ethereal-drift {
+    0%, 100% { transform: translate3d(-6%, 0, 0) scale(1); }
+    33% { transform: translate3d(6%, -5%, 0) scale(1.05); }
+    66% { transform: translate3d(0, 5%, 0) scale(0.98); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bg-animated-gradient::before { animation: none; }
   }
 
   @keyframes shimmer {
@@ -282,4 +295,23 @@
     @apply shadow-[0_0_20px_hsl(var(--accent)/0.5)];
     transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
+}
+
+/* Decorative infinite loops run as CSS animations on the compositor thread.
+   `translate`/`scale` compose with any existing `transform` on the element. */
+@layer utilities {
+  .anim-float { animation: float-y 6s ease-in-out infinite; --float-distance: -10px; }
+  .anim-float-slow { animation: float-y 7s ease-in-out infinite; --float-distance: -8px; }
+  .anim-blink { animation: blink 1.2s ease-in-out infinite; }
+  .anim-bar { animation: bar-pulse 4s ease-in-out infinite; }
+  .anim-scan { animation: scan-y 3.5s ease-in-out infinite; }
+}
+
+@keyframes float-y { 0%, 100% { translate: 0 0; } 50% { translate: 0 var(--float-distance); } }
+@keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+@keyframes bar-pulse { 0%, 100% { scale: 0.6 1; } 50% { scale: 0.92 1; } }
+@keyframes scan-y { from { translate: 0 -20px; } to { translate: 0 480px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-float, .anim-float-slow, .anim-blink, .anim-bar, .anim-scan { animation: none; }
 }

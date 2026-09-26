@@ -14,6 +14,11 @@ export default {
       },
     },
     extend: {
+      // Text uses a lighter tint of the brand purple so small copy meets WCAG AA on the
+      // dark glass surfaces; fills (bg-primary) keep the brand shade for white-on-purple buttons.
+      textColor: {
+        primary: { DEFAULT: "hsl(var(--primary-text))", foreground: "hsl(var(--primary-foreground))" },
+      },
       fontFamily: {
         heading: ["Outfit", "sans-serif"],
         body: ["Manrope", "sans-serif"],
@@ -36,6 +41,8 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+          // Darker fill for solid buttons/badges so white text meets WCAG AA (≥ 4.5:1).
+          solid: "hsl(var(--destructive-solid))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",

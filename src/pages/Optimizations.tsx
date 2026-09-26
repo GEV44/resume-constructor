@@ -329,7 +329,7 @@ export default function Optimizations() {
                     <button
                       onClick={() => setPendingDelete(item)}
                       aria-label={`Delete optimization for ${formatRole(item.job_role)}`}
-                      className="absolute top-3 right-3 p-1 rounded-md text-muted-foreground opacity-60 hover:opacity-100 hover:text-destructive focus:opacity-100 transition-all"
+                      className="absolute top-2 right-2 p-1.5 rounded-md text-muted-foreground opacity-60 hover:opacity-100 hover:text-destructive focus:opacity-100 transition-all"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -583,7 +583,7 @@ export default function Optimizations() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive-solid text-destructive-foreground hover:bg-destructive-solid/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

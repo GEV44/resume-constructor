@@ -1,13 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Briefcase, CheckCircle2, FileSearch, Lock, RotateCcw, Sparkles, Target, XCircle } from "lucide-react";
+import { ArrowRight, Briefcase, CheckCircle2, FileSearch, FileUp, Loader2, Lock, RotateCcw, Sparkles, Target, XCircle } from "lucide-react";
 import Seo from "@/components/Seo";
 import { JOB_ROLES, JOB_ROLE_CATEGORIES } from "@/lib/job-roles";
 import { scoreResume, type ScoreResult } from "@/lib/scoring";
 import { quickParse, SAMPLE_RESUME } from "@/lib/quick-parse";
 import { gradeColor } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
+import { ExtractError, extractResumeText } from "@/lib/extract-text";
 
 const inputClass = "w-full glass rounded-xl px-4 py-3 bg-transparent text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all";
 
@@ -55,6 +56,38 @@ export default function AtsChecker() {
   const [roleId, setRoleId] = useState("frontend-engineer");
   const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState<ScoreResult | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [fileNote, setFileNote] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // Each load gets an id so a slower, earlier file can never overwrite a newer one.
+  const loadId = useRef(0);
+  const loadFile = async (file: File | undefined) => {
+    if (!file) return;
+    const id = ++loadId.current;
+    setExtracting(true);
+    setFileNote(null);
+    try {
+      const { text, note } = await extractResumeText(file);
+      if (id !== loadId.current) return;
+      setResumeText(text.slice(0, 30000));
+      setResult(null);
+      setFileNote({ tone: "ok", text: `Extracted text from ${file.name}${note ? ` (${note})` : ""} — review it below, then check.` });
+    } catch (e) {
+      if (id !== loadId.current) return;
+      setFileNote({ tone: "error", text: e instanceof ExtractError ? e.message : "Couldn't read that file. Try another format or paste the text." });
+    } finally {
+      if (id === loadId.current) setExtracting(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    loadFile(e.dataTransfer.files[0]);
+  };
   const role = useMemo(() => JOB_ROLES.find((r) => r.id === roleId), [roleId]);
 
   const check = () => {
@@ -77,7 +110,7 @@ export default function AtsChecker() {
     <div className="min-h-screen bg-animated-gradient">
       <Seo
         title="Free ATS Resume Checker — Score Your Resume Instantly"
-        description="Paste your resume and a job description to get an instant, deterministic ATS score, missing keywords and fixes. Runs in your browser — nothing is uploaded."
+        description="Upload a PDF or DOCX resume and a job description to get an instant, deterministic ATS score, missing keywords and fixes. Runs in your browser — nothing is uploaded."
         path="/ats-checker"
         jsonLd={{
           "@context": "https://schema.org",
@@ -112,24 +145,38 @@ export default function AtsChecker() {
             Free <span className="gradient-text">ATS Resume Checker</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Paste your resume, pick a target role and optionally a job description. You get the same deterministic score our full app uses — same input, same score. Ongoing roles ("Present") are counted up to today.
+            Upload or paste your resume, pick a target role and optionally a job description. You get the same deterministic score our full app uses — same input, same score. Ongoing roles ("Present") are counted up to today.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-[1.3fr_1fr] gap-5">
-          <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="checker-resume" className="text-sm font-medium">Your resume (plain text)</label>
-              <button type="button" onClick={() => { setResumeText(SAMPLE_RESUME); setResult(null); }} className="text-xs text-accent hover:underline">
-                Use a sample
-              </button>
+          <div
+            className={`glass rounded-2xl p-5 transition-all ${dragOver ? "ring-2 ring-accent" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+          >
+            <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+              <label htmlFor="checker-resume" className="text-sm font-medium">Your resume</label>
+              <div className="flex items-center gap-3">
+                <input ref={fileInput} type="file" accept=".pdf,.docx,.txt" className="hidden" aria-label="Upload resume file" onChange={(e) => loadFile(e.target.files?.[0])} />
+                <button type="button" onClick={() => fileInput.current?.click()} disabled={extracting} className="text-xs glass rounded-full px-3 py-1.5 flex items-center gap-1.5 hover:bg-glass-hover disabled:opacity-50">
+                  {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />} Upload PDF / DOCX
+                </button>
+                <button type="button" onClick={() => { setResumeText(SAMPLE_RESUME); setResult(null); setFileNote(null); }} className="text-xs text-accent hover:underline">
+                  Use a sample
+                </button>
+              </div>
             </div>
+            {fileNote && (
+              <p role="status" className={`text-xs mb-2 ${fileNote.tone === "ok" ? "text-accent" : "text-destructive"}`}>{fileNote.text}</p>
+            )}
             <textarea
               id="checker-resume"
               rows={18}
               value={resumeText}
               onChange={(e) => setResumeText(e.target.value.slice(0, 30000))}
-              placeholder={"Paste the text of your resume here.\nTip: open your PDF, press Ctrl/⌘+A, then copy and paste."}
+              placeholder={"Drop a PDF or DOCX here, upload one, or paste your resume text.\nEverything stays in your browser."}
               className={`${inputClass} font-mono text-xs leading-relaxed resize-y`}
             />
           </div>
