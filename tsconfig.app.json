@@ -26,7 +26,8 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ]
+      ],
+      "@shared/*": ["./supabase/functions/_shared/*"]
     }
   },
   "include": [

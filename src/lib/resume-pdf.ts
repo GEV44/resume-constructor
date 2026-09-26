@@ -1,6 +1,4 @@
 // HTML-to-PDF resume rendering using real CSS so text never gets cut off.
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 
 export type ResumeTemplate =
   | "ats" | "executive" | "modern" | "minimal" | "creative" | "tech"
@@ -76,7 +74,9 @@ function mergeExperience(fallback: ResumeData["experience"], primary: ResumeData
   primary.forEach((item) => {
     const key = `${item.role}|${item.company}|${item.duration}`.toLowerCase();
     const previous = map.get(key);
-    map.set(key, { ...previous, ...item, responsibilities: uniqueStrings([previous?.responsibilities, item.responsibilities]) });
+    // The optimized bullets replace the originals; fall back only when none were produced.
+    const responsibilities = asArray<string>(item.responsibilities);
+    map.set(key, { ...previous, ...item, responsibilities: responsibilities.length ? responsibilities : asArray<string>(previous?.responsibilities) });
   });
   return Array.from(map.values());
 }
@@ -128,8 +128,10 @@ export function hydrateResumeData(data: Partial<ResumeData> | null | undefined, 
     ...primary,
     contact: { ...original.contact, ...compactObject(primary.contact as unknown as Record<string, unknown>) } as ResumeData["contact"],
     education: mergeByKey(original.education, primary.education, (e) => `${e.degree}|${e.institution}|${e.year}`),
-    skills: uniqueStrings([original.skills, primary.skills]),
-    tools: uniqueStrings([original.tools, primary.tools]),
+    // Skills/tools are user-editable and the server already keeps every original entry,
+    // so the saved list wins; the original parse is only a fallback.
+    skills: uniqueStrings([primary.skills.length ? primary.skills : original.skills]),
+    tools: uniqueStrings([primary.tools.length ? primary.tools : original.tools]),
     experience: mergeExperience(original.experience, primary.experience),
     projects: mergeProjects(original.projects, primary.projects),
     certifications: uniqueStrings([original.certifications, primary.certifications]),
@@ -139,12 +141,25 @@ export function hydrateResumeData(data: Partial<ResumeData> | null | undefined, 
   };
 }
 
-export function parseOptimizedPayload(raw: string): { text: string; structured: ResumeData } | null {
+export interface OptimizedPayload {
+  text: string;
+  structured: ResumeData;
+  suggestions: string[];
+  mode?: string;
+}
+
+export function parseOptimizedPayload(raw: string): OptimizedPayload | null {
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === "object" && p.structured) return { text: p.text || "", structured: hydrateResumeData(p.structured, p.text || "") };
+    if (p && typeof p === "object" && p.structured) {
+      return { text: p.text || "", structured: hydrateResumeData(p.structured, p.text || ""), suggestions: asArray<string>(p.suggestions), mode: p.mode };
+    }
   } catch { /* legacy */ }
   return null;
+}
+
+export function serializeOptimizedPayload(payload: OptimizedPayload): string {
+  return JSON.stringify({ text: payload.text, structured: payload.structured, suggestions: payload.suggestions, mode: payload.mode });
 }
 
 export function getTemplateList() {
@@ -162,7 +177,8 @@ export function getTemplateList() {
   ];
 }
 
-const esc = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (s: unknown) => String(s ?? "")
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 function contactBits(c: ResumeData["contact"]): string[] {
   const p: string[] = [];
@@ -609,7 +625,7 @@ export async function downloadResumePDF(plainText: string, data: ResumeData | nu
   container.style.background = "#ffffff";
   container.innerHTML = html;
   document.body.appendChild(container);
-  try { if ((document as any).fonts?.ready) await (document as any).fonts.ready; } catch {}
+  try { await document.fonts?.ready; } catch { /* fonts API unavailable */ }
   await new Promise((r) => setTimeout(r, 250));
   try {
     await renderSectionedPdf(container, filename);
@@ -625,6 +641,7 @@ async function renderSectionedPdf(container: HTMLElement, filename: string): Pro
   const A4_HEIGHT_MM = 297;
 
   const resumeEl = container.querySelector<HTMLElement>(".resume") || container;
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
 
   const canvas = await html2canvas(resumeEl, {
     scale: 2,

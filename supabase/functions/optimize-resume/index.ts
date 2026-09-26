@@ -1,418 +1,236 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { adminClient, enforceHourlyLimit, handle, HttpError, json, readJson, requireUser } from "../_shared/http.ts";
+import { callTool, todayLine } from "../_shared/ai.ts";
+import { getJobRoleById } from "../_shared/job-roles.ts";
+import { normalizeSkill, resumeCorpus, scoreResume, textGrams, type ParsedResume } from "../_shared/scoring.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+type Mode = "text" | "design" | "both";
+
+interface ChangeItem { type: string; location: string; before: string; after: string }
+
+interface Rewrite {
+  summary: string;
+  experience: { index: number; responsibilities: string[] }[];
+  projects: { index: number; description: string }[];
+  skills: string[];
+  tools: string[];
+  changes_made: ChangeItem[];
+  suggestions: string[];
+}
+
+const REWRITE_SCHEMA = {
+  type: "object",
+  properties: {
+    summary: { type: "string", description: "2–4 sentence professional summary targeted at the role, built only from facts in the resume" },
+    experience: {
+      type: "array",
+      description: "One entry per original position, identified by its index. Do not add or remove positions.",
+      items: {
+        type: "object",
+        properties: { index: { type: "integer" }, responsibilities: { type: "array", items: { type: "string" } } },
+        required: ["index", "responsibilities"],
+      },
+    },
+    projects: {
+      type: "array",
+      description: "One entry per original project, identified by its index. Do not add projects.",
+      items: {
+        type: "object",
+        properties: { index: { type: "integer" }, description: { type: "string" } },
+        required: ["index", "description"],
+      },
+    },
+    skills: { type: "array", items: { type: "string" }, description: "Skills ordered by relevance to the role; only skills evidenced in the resume" },
+    tools: { type: "array", items: { type: "string" }, description: "Tools ordered by relevance; only tools evidenced in the resume" },
+    changes_made: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: ["enhanced_bullet", "added_metrics", "added_skill", "rewritten_summary", "stronger_verb", "added_keywords", "reordered"] },
+          location: { type: "string" },
+          before: { type: "string" },
+          after: { type: "string" },
+        },
+        required: ["type", "location", "before", "after"],
+      },
+    },
+    suggestions: {
+      type: "array",
+      items: { type: "string" },
+      description: "Things the candidate could add ONLY IF TRUE (missing skills, certifications, projects, metrics). Phrase as 'If you have…, add…'.",
+    },
+  },
+  required: ["summary", "experience", "projects", "skills", "tools", "changes_made", "suggestions"],
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+function buildSystemPrompt(roleName: string, mode: Mode): string {
+  return `${todayLine()}
 
-  try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) throw new Error("Not authenticated");
+You are an elite resume writer for ${roleName} roles. You rewrite for impact and ATS keyword coverage while staying 100% truthful.
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+NON-NEGOTIABLE RULES
+1. Never invent employers, titles, dates, degrees, certifications, projects, tools or responsibilities.
+2. Never invent numbers. Keep every figure from the source. Where a metric would clearly strengthen a bullet but is not in the source,
+   insert a bracketed placeholder the candidate must fill in, e.g. "[X%]", "[N users]", "[$X]". Use placeholders sparingly (at most one per bullet).
+3. Only list skills/tools evidenced somewhere in the resume. Put anything else the candidate might have in "suggestions" instead.
+4. Return exactly one experience entry per original position (by index) and one project entry per original project (by index).
+5. Use job-description keywords only where the resume supports them.
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+HOW TO WRITE
+- Every bullet: strong past-tense action verb → what you did (scope, tools) → measurable result or business impact.
+- 1–2 lines per bullet, no first person, no filler ("responsible for", "helped with", "various").
+- Keep the candidate's own bullet count per role (you may merge duplicates or split an overloaded bullet).
+- Summary: 2–4 sentences — who they are, years of experience, core stack/domain, standout results — tailored to ${roleName}.
+${mode === "text" ? "- MODE: text only — rewrite summary and bullets; return skills and tools unchanged in their original order." : "- MODE: full — rewrite summary, bullets and project descriptions, and order skills/tools by relevance to the role."}
+Record each meaningful edit in changes_made (before/after quotes).`;
+}
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) throw new Error("Not authenticated");
-
-    const { resumeText, parsed, jobRoleId, analysisId, resumeId, currentScore, missingSkills, recommendations, mode } = await req.json();
-    const optimizeMode: "text" | "design" | "both" = (mode === "text" || mode === "design" || mode === "both") ? mode : "both";
-
-    // Verify the caller owns the referenced resume and analysis
-    if (resumeId) {
-      const { data: resumeRow } = await supabase
-        .from("resumes").select("user_id").eq("id", resumeId).maybeSingle();
-      if (!resumeRow || resumeRow.user_id !== user.id) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-    }
-    if (analysisId) {
-      const { data: analysisRow } = await supabase
-        .from("analyses").select("user_id").eq("id", analysisId).maybeSingle();
-      if (!analysisRow || analysisRow.user_id !== user.id) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-    }
-
-    const contactInfo = parsed?.contact || {};
-    const experiences = parsed?.experience || [];
-    const education = parsed?.education || [];
-    const existingProjects = parsed?.projects || [];
-    const skills = [...(parsed?.skills || []), ...(parsed?.tools || [])];
-    const certifications = parsed?.certifications || [];
-    const roleName = jobRoleId.replace(/-/g, " ");
-
-    const experienceBlock = experiences.map((e: any) =>
-      `ROLE: ${e.role} | COMPANY: ${e.company} | DURATION: ${e.duration}\nBULLETS:\n${(e.responsibilities || []).map((r: string) => `- ${r}`).join("\n")}`
-    ).join("\n\n");
-
-    const educationBlock = education.map((e: any) =>
-      `${e.degree} — ${e.institution} (${e.year})${e.field ? ` — ${e.field}` : ""}`
-    ).join("\n");
-
-    const projectBlock = existingProjects.map((p: any) =>
-      `${p.name}: ${p.description} [${(p.technologies || []).join(", ")}]`
-    ).join("\n");
-
-    const hasProjects = existingProjects.length > 0;
-    const maxNewProjects = optimizeMode === "design" ? 0 : Math.max(0, 3 - existingProjects.length);
-
-    // === DESIGN-ONLY MODE: skip AI, reuse existing parsed data ===
-    if (optimizeMode === "design") {
-      const optimizedResumeData = {
-        contact: contactInfo,
-        education,
-        certifications,
-        total_years_experience: parsed?.total_years_experience || 0,
-        quantified_metrics: parsed?.quantified_metrics || [],
-        languages: parsed?.languages || [],
-        interests: parsed?.interests || [],
-        summary: parsed?.summary || "",
-        experience: experiences,
-        skills: parsed?.skills || [],
-        tools: parsed?.tools || [],
-        projects: existingProjects,
-        changes_made: [{
-          type: "design_refresh",
-          location: "Layout",
-          before: "Original template",
-          after: "Restyled with a modern professional template — content unchanged.",
-        }],
-      };
-
-      const textParts: string[] = [];
-      textParts.push(contactInfo.name || "");
-      if (contactInfo.email) textParts.push(contactInfo.email);
-      if (contactInfo.phone) textParts.push(contactInfo.phone);
-      if (contactInfo.location) textParts.push(contactInfo.location);
-      textParts.push("");
-      textParts.push(resumeText);
-
-      const storagePayload = JSON.stringify({
-        text: textParts.join("\n"),
-        structured: optimizedResumeData,
-      });
-
-      const afterScore = currentScore; // design-only does not improve content score
-      const { error: insertError } = await supabase
-        .from("optimized_resumes")
-        .insert({
-          resume_id: resumeId,
-          analysis_id: analysisId,
-          user_id: user.id,
-          job_role: jobRoleId,
-          optimized_text: storagePayload,
-          improvement_percentage: 0,
-          before_score: currentScore,
-          after_score: afterScore,
-        });
-      if (insertError) throw new Error("Failed to save: " + insertError.message);
-
-      return new Response(JSON.stringify({
-        optimized_text: storagePayload,
-        before_score: currentScore,
-        after_score: afterScore,
-        improvement_percentage: 0,
-        changes_made: optimizedResumeData.changes_made,
-        mode: "design",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const textOnlyNote = optimizeMode === "text"
-      ? "\nMODE: TEXT-ONLY REWRITE — Rewrite EVERY bullet to be stronger. Do not add new projects. Focus purely on impact, metrics, and senior phrasing."
-      : "\nMODE: FULL OPTIMIZATION — Rewrite bullets, rewrite summary, and may add up to " + maxNewProjects + " realistic projects.";
-
-    const systemPrompt = `Today is June 2026. Use 2025–2026 resume and job market standards. Do not reference 2024 as the current year.
-
-You are a world-class resume writer who has crafted resumes for FAANG engineers, McKinsey consultants, and C-suite executives. Produce executive-grade, hard-hitting content.${textOnlyNote}
-
-ABSOLUTE RULES — VIOLATION = FAILURE:
-1. Personal info (name, email, phone, location, links) MUST stay EXACTLY as given. DO NOT invent new contact info.
-2. ALL company names, job titles, employment dates MUST stay EXACTLY as given.
-3. ALL education details MUST stay EXACTLY as given.
-4. DO NOT add work experience that doesn't exist. DO NOT add certifications that don't exist.
-5. Only add skills directly inferable from the person's education, coursework, or listed experience.
-6. Keep the SAME number of experience entries. Do not add or remove jobs.
-
-WHAT YOU CAN DO:
-a. REWRITE every bullet as a high-impact, recruiter-magnet statement: strong action verb + scope + quantified outcome + business impact.
-b. REWRITE the professional summary as a 3–4 sentence executive-grade pitch targeting the ${roleName} role, packed with trend keywords.
-c. EXPAND bullets to 2 lines when it improves clarity. There is NO upper word limit. Be substantive, never sparse.
-d. Use 2025–2026 industry vocabulary, modern tools, and current best practices for ${roleName}.
-e. ADD up to ${maxNewProjects} realistic projects (if mode allows).
-f. ADD skills only if directly inferable from existing experience or education.
-
-BULLET TRANSFORMATION EXAMPLES:
-- weak: "Helped clients buy properties"
-  strong: "Closed 25+ residential transactions worth $4.5M+ in annual GMV by orchestrating end-to-end buyer journeys, negotiating contracts, and partnering with mortgage/legal counterparts — ranked top 10% of agents in the brokerage."
-- weak: "Built a website"
-  strong: "Architected and shipped a production React + TypeScript marketing site serving 12K monthly visitors, improving Lighthouse performance from 62 → 96 and lifting lead conversion by 38%."
-EVERY bullet must include: strong verb, scope/scale, quantified outcome, and business/user impact. Plausible numbers only.
-
-${maxNewProjects > 0 ? `PROJECT RULES — Create up to ${maxNewProjects} projects that:
-- Are realistic given education: ${educationBlock}
-- Use ONLY technologies from their skills: ${skills.join(", ")}
-- Have 3 bullet points with metrics and modern tooling
-- Are labeled as academic/personal projects` : "DO NOT add any new projects — the person already has enough."}
-
-TARGET ROLE: ${roleName}
-MISSING SKILLS TO CONSIDER: ${(missingSkills || []).join(", ")}`;
-
-    const userPrompt = `RESUME TO OPTIMIZE:
-
-PERSONAL INFO (DO NOT CHANGE):
-Name: ${contactInfo.name || "Unknown"}
-Email: ${contactInfo.email || ""}
-Phone: ${contactInfo.phone || ""}
-Location: ${contactInfo.location || ""}
-LinkedIn: ${contactInfo.linkedin || ""}
-GitHub: ${contactInfo.github || ""}
-Telegram: ${contactInfo.telegram || ""}
-
-SKILLS: ${skills.join(", ")}
-
-WORK EXPERIENCE (KEEP ALL COMPANIES/TITLES/DATES):
-${experienceBlock || "No work experience listed"}
-
-EDUCATION (DO NOT CHANGE):
-${educationBlock || "No education listed"}
-
-EXISTING PROJECTS (KEEP AS-IS, only enhance wording):
-${projectBlock || "No projects listed"}
-
-CERTIFICATIONS: ${certifications.join(", ") || "None"}
-
-FULL TEXT:
-${resumeText}
-
-Return the optimized resume. KEEP ALL ORIGINAL FACTS. Make every bullet substantially stronger. No length cap on bullets — depth over brevity.`;
-
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "return_optimized_resume",
-            description: "Return the optimized resume as structured data",
-            parameters: {
-              type: "object",
-              properties: {
-                summary: { type: "string", description: "Professional summary targeting the role (2-3 sentences)" },
-                experience: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      role: { type: "string" },
-                      company: { type: "string" },
-                      duration: { type: "string" },
-                      years: { type: "number" },
-                      responsibilities: { type: "array", items: { type: "string" } }
-                    },
-                    required: ["role", "company", "duration", "years", "responsibilities"]
-                  }
-                },
-                skills: { type: "array", items: { type: "string" } },
-                tools: { type: "array", items: { type: "string" } },
-                projects: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      name: { type: "string" },
-                      description: { type: "string" },
-                      technologies: { type: "array", items: { type: "string" } }
-                    },
-                    required: ["name", "description", "technologies"]
-                  },
-                  description: `Include ALL existing projects (rewritten) plus up to ${maxNewProjects} new ones. Do NOT drop any existing project.`
-                },
-                changes_made: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      type: { type: "string", description: "Type: enhanced_bullet, added_metrics, added_skill, added_project, rewritten_summary, stronger_verb" },
-                      location: { type: "string" },
-                      before: { type: "string" },
-                      after: { type: "string" }
-                    },
-                    required: ["type", "location", "before", "after"]
-                  }
-                }
-              },
-              required: ["summary", "experience", "skills", "tools", "projects", "changes_made"]
-            }
-          }
-        }],
-        tool_choice: { type: "function", function: { name: "return_optimized_resume" } },
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const status = aiResponse.status;
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      const body = await aiResponse.text();
-      console.error("AI error:", status, body);
-      throw new Error("AI optimization failed");
-    }
-
-    const aiData = await aiResponse.json();
-    let optimizedData: any;
-
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall) {
-      optimizedData = JSON.parse(toolCall.function.arguments);
-    } else {
-      const content = aiData.choices?.[0]?.message?.content || "";
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) optimizedData = JSON.parse(jsonMatch[0]);
-    }
-
-    if (!optimizedData) throw new Error("Failed to generate optimized resume");
-
-    // No cap on projects — preserve everything the model returned plus any originals.
-
-    const optimizedResumeData = {
-      contact: contactInfo,
-      education,
-      certifications,
-      total_years_experience: parsed?.total_years_experience || 0,
-      quantified_metrics: parsed?.quantified_metrics || [],
-      languages: parsed?.languages || [],
-      interests: parsed?.interests || [],
-      summary: optimizedData.summary || "",
-      experience: optimizedData.experience || experiences,
-      skills: optimizedData.skills || parsed?.skills || [],
-      tools: optimizedData.tools || parsed?.tools || [],
-      projects: optimizedData.projects || existingProjects,
-      changes_made: optimizedData.changes_made || [],
-    };
-
-    // Build text representation
-    const textParts: string[] = [];
-    textParts.push(contactInfo.name || "");
-    if (contactInfo.email) textParts.push(contactInfo.email);
-    if (contactInfo.phone) textParts.push(contactInfo.phone);
-    if (contactInfo.location) textParts.push(contactInfo.location);
-    if (contactInfo.linkedin) textParts.push(contactInfo.linkedin);
-    textParts.push("");
-
-    if (optimizedData.summary) {
-      textParts.push("PROFESSIONAL SUMMARY");
-      textParts.push(optimizedData.summary);
-      textParts.push("");
-    }
-
-    textParts.push("SKILLS");
-    textParts.push((optimizedData.skills || []).join(", "));
-    if ((optimizedData.tools || []).length > 0) {
-      textParts.push("Tools: " + optimizedData.tools.join(", "));
-    }
-    textParts.push("");
-
-    textParts.push("EXPERIENCE");
-    for (const exp of (optimizedData.experience || [])) {
-      textParts.push(`${exp.role} — ${exp.company} (${exp.duration})`);
-      for (const r of (exp.responsibilities || [])) {
-        textParts.push(`• ${r}`);
-      }
-      textParts.push("");
-    }
-
-    if ((optimizedData.projects || []).length > 0) {
-      textParts.push("PROJECTS");
-      for (const proj of optimizedData.projects) {
-        textParts.push(`${proj.name} [${(proj.technologies || []).join(", ")}]`);
-        textParts.push(proj.description);
-        textParts.push("");
-      }
-    }
-
-    textParts.push("EDUCATION");
-    for (const edu of education) {
-      textParts.push(`${edu.degree} — ${edu.institution} (${edu.year})`);
-    }
-    if (certifications.length > 0) {
-      textParts.push("");
-      textParts.push("CERTIFICATIONS");
-      textParts.push(certifications.join(", "));
-    }
-
-    const optimizedText = textParts.join("\n");
-
-    // Score improvement
-    const changeCount = (optimizedData.changes_made || []).length;
-    const projectBonus = Math.min(4, (optimizedData.projects || []).length) * 3;
-    const skillBonus = Math.max(0, (optimizedData.skills || []).length - skills.length) * 1.5;
-    const improvementPct = Math.min(40, Math.round(changeCount * 2 + projectBonus + skillBonus));
-    const afterScore = Math.min(100, currentScore + improvementPct);
-
-    const storagePayload = JSON.stringify({
-      text: optimizedText,
-      structured: optimizedResumeData,
-    });
-
-    const { error: insertError } = await supabase
-      .from("optimized_resumes")
-      .insert({
-        resume_id: resumeId,
-        analysis_id: analysisId,
-        user_id: user.id,
-        job_role: jobRoleId,
-        optimized_text: storagePayload,
-        improvement_percentage: improvementPct,
-        before_score: currentScore,
-        after_score: afterScore,
-      });
-
-    if (insertError) throw new Error("Failed to save optimization: " + insertError.message);
-
-    return new Response(JSON.stringify({
-      optimized_text: storagePayload,
-      before_score: currentScore,
-      after_score: afterScore,
-      improvement_percentage: improvementPct,
-      changes_made: optimizedData.changes_made || [],
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
-  } catch (e) {
-    console.error("optimize-resume error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+function renderText(d: Required<Pick<ParsedResume, "experience" | "projects" | "education" | "skills" | "tools" | "certifications">> & ParsedResume): string {
+  const c = d.contact ?? {};
+  const lines = [c.name ?? "", [c.email, c.phone, c.location, c.linkedin, c.github, c.website].filter(Boolean).join(" | "), ""];
+  if (d.summary) lines.push("SUMMARY", d.summary, "");
+  if (d.skills.length || d.tools.length) lines.push("SKILLS", [...d.skills, ...d.tools].join(", "), "");
+  if (d.experience.length) {
+    lines.push("EXPERIENCE");
+    for (const e of d.experience) lines.push(`${e.role ?? ""} — ${e.company ?? ""} (${e.duration ?? ""})`, ...(e.responsibilities ?? []).map((r) => `• ${r}`), "");
   }
-});
+  if (d.projects.length) {
+    lines.push("PROJECTS");
+    for (const p of d.projects) lines.push(`${p.name ?? ""}${p.technologies?.length ? ` (${p.technologies.join(", ")})` : ""}`, p.description ?? "", "");
+  }
+  if (d.education.length) lines.push("EDUCATION", ...d.education.map((e) => `${e.degree ?? ""}${e.field ? `, ${e.field}` : ""} — ${e.institution ?? ""} (${e.year ?? ""})`), "");
+  if (d.certifications.length) lines.push("CERTIFICATIONS", d.certifications.join(", "), "");
+  if (d.languages?.length) lines.push("LANGUAGES", d.languages.join(", "));
+  return lines.join("\n").trim();
+}
+
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((s): s is string => typeof s === "string" && s.trim().length > 0).map((s) => s.trim()) : []);
+
+Deno.serve(handle("optimize-resume", async (req) => {
+  const supabase = adminClient();
+  const user = await requireUser(req, supabase);
+
+  const body = await readJson<{ analysisId?: unknown; mode?: unknown }>(req);
+  if (typeof body.analysisId !== "string") throw new HttpError(400, "analysisId is required");
+  const mode: Mode = body.mode === "text" || body.mode === "design" ? body.mode : "both";
+
+  const { data: analysis } = await supabase
+    .from("analyses").select("id, user_id, resume_id, job_role, job_description").eq("id", body.analysisId).maybeSingle();
+  if (!analysis || analysis.user_id !== user.id) throw new HttpError(403, "Forbidden");
+  const { data: resume } = await supabase
+    .from("resumes").select("id, user_id, original_text, parsed_json").eq("id", analysis.resume_id).maybeSingle();
+  if (!resume || resume.user_id !== user.id) throw new HttpError(403, "Forbidden");
+  const role = getJobRoleById(analysis.job_role);
+  if (!role) throw new HttpError(400, "Unknown job role");
+  if (mode !== "design") await enforceHourlyLimit(supabase, "optimized_resumes", user.id, "OPTIMIZE_LIMIT_PER_HOUR", 15);
+
+  const original = (resume.parsed_json ?? {}) as ParsedResume;
+  const originalText: string = resume.original_text ?? "";
+  const jobDescription: string = analysis.job_description ?? "";
+  const base = {
+    ...original,
+    experience: original.experience ?? [],
+    projects: original.projects ?? [],
+    education: original.education ?? [],
+    skills: original.skills ?? [],
+    tools: original.tools ?? [],
+    certifications: original.certifications ?? [],
+  };
+
+  let optimized = base;
+  let changes: ChangeItem[] = [{ type: "design_refresh", location: "Layout", before: "Original layout", after: "Restyled with a professional template — content unchanged." }];
+  let suggestions: string[] = [];
+
+  if (mode !== "design") {
+    const before = scoreResume(original, role.id, originalText, jobDescription);
+    const rewrite = await callTool<Rewrite>({
+      system: buildSystemPrompt(role.name, mode),
+      user: `TARGET ROLE: ${role.name}
+CORE SKILLS FOR THE ROLE: ${[...role.required_skills, ...role.preferred_skills].join(", ")}
+MISSING CORE SKILLS: ${before.missing_skills.join(", ") || "none"}
+${before.job_match ? `JOB DESCRIPTION KEYWORDS MISSING: ${before.job_match.missing.join(", ") || "none"}\n` : ""}${jobDescription ? `\nJOB DESCRIPTION:\n${jobDescription.slice(0, 6000)}\n` : ""}
+CURRENT SUMMARY: ${base.summary || "(none)"}
+
+EXPERIENCE (by index):
+${base.experience.map((e, i) => `[${i}] ${e.role} — ${e.company} (${e.duration})\n${(e.responsibilities ?? []).map((r) => `  - ${r}`).join("\n")}`).join("\n") || "(none)"}
+
+PROJECTS (by index):
+${base.projects.map((p, i) => `[${i}] ${p.name} [${(p.technologies ?? []).join(", ")}]: ${p.description}`).join("\n") || "(none)"}
+
+SKILLS: ${base.skills.join(", ")}
+TOOLS: ${base.tools.join(", ")}
+EDUCATION: ${base.education.map((e) => `${e.degree} ${e.field ?? ""} — ${e.institution} (${e.year})`).join("; ")}
+CERTIFICATIONS: ${base.certifications.join(", ") || "none"}
+
+FULL ORIGINAL TEXT (for evidence only):
+${originalText.slice(0, 12_000)}`,
+      tool: { name: "return_rewrite", description: "Return the rewritten resume content", parameters: REWRITE_SCHEMA },
+      temperature: 0.4,
+    });
+
+    // Merge by index onto the original facts, so names, titles and dates can never change.
+    const bulletsFor = new Map((rewrite.experience ?? []).map((e) => [e.index, strings(e.responsibilities)]));
+    const projectFor = new Map((rewrite.projects ?? []).map((p) => [p.index, typeof p.description === "string" ? p.description.trim() : ""]));
+
+    // A skill is kept only if the original resume already evidences it.
+    const evidence = new Set([...textGrams(resumeCorpus(original, originalText)), ...[...base.skills, ...base.tools].map(normalizeSkill)]);
+    const evidenced = (s: string) => evidence.has(normalizeSkill(s));
+    const keepOrder = (proposed: string[], originalList: string[]) => {
+      const kept = [...new Map(proposed.filter(evidenced).map((s) => [normalizeSkill(s), s])).values()];
+      const keptKeys = new Set(kept.map(normalizeSkill));
+      return [...kept, ...originalList.filter((s) => !keptKeys.has(normalizeSkill(s)))];
+    };
+    const rejected = [...strings(rewrite.skills), ...strings(rewrite.tools)].filter((s) => !evidenced(s));
+
+    optimized = {
+      ...base,
+      summary: typeof rewrite.summary === "string" && rewrite.summary.trim() ? rewrite.summary.trim() : base.summary,
+      experience: base.experience.map((e, i) => {
+        const bullets = bulletsFor.get(i);
+        return bullets && bullets.length ? { ...e, responsibilities: bullets } : e;
+      }),
+      projects: base.projects.map((p, i) => (mode === "both" && projectFor.get(i) ? { ...p, description: projectFor.get(i)! } : p)),
+      skills: mode === "both" ? keepOrder(strings(rewrite.skills), base.skills) : base.skills,
+      tools: mode === "both" ? keepOrder(strings(rewrite.tools), base.tools) : base.tools,
+    };
+    changes = (Array.isArray(rewrite.changes_made) ? rewrite.changes_made : [])
+      .filter((c) => c && typeof c.after === "string")
+      .filter((c) => c.type !== "added_skill" || !rejected.some((r) => c.after.toLowerCase().includes(r.toLowerCase())))
+      .slice(0, 80);
+    suggestions = [
+      ...strings(rewrite.suggestions),
+      ...rejected.map((s) => `If you have hands-on experience with ${s}, add it with a bullet that shows how you used it.`),
+    ].slice(0, 12);
+  }
+
+  const optimizedText = renderText(optimized);
+  const beforeScore = scoreResume(original, role.id, originalText, jobDescription).overall_score;
+  const afterScore = mode === "design" ? beforeScore : scoreResume(optimized, role.id, optimizedText, jobDescription).overall_score;
+  const payload = JSON.stringify({ text: optimizedText, structured: { ...optimized, changes_made: changes }, suggestions, mode });
+
+  const { data: row, error } = await supabase
+    .from("optimized_resumes")
+    .insert({
+      resume_id: resume.id,
+      analysis_id: analysis.id,
+      user_id: user.id,
+      job_role: role.id,
+      optimized_text: payload,
+      improvement_percentage: afterScore - beforeScore,
+      before_score: beforeScore,
+      after_score: afterScore,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error("Failed to save optimization: " + error.message);
+
+  return json(req, {
+    id: row.id,
+    before_score: beforeScore,
+    after_score: afterScore,
+    improvement_percentage: afterScore - beforeScore,
+    changes_made: changes,
+    suggestions,
+    mode,
+  });
+}));

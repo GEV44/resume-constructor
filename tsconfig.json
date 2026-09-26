@@ -15,7 +15,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./supabase/functions/_shared/*"]
     }
   },
   "include": ["src"],

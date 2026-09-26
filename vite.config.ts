@@ -18,12 +18,24 @@ export default defineConfig(({ mode }) => ({
       })(),
   ].filter(Boolean),
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@shared": path.resolve(__dirname, "./supabase/functions/_shared"),
+    },
   },
   build: {
     outDir: "dist",
     sourcemap: false,
-    chunkSizeWarningLimit: 1600,
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          supabase: ["@supabase/supabase-js"],
+          motion: ["framer-motion"],
+        },
+      },
+    },
   },
   server: { port: 5173, host: true },
 }));

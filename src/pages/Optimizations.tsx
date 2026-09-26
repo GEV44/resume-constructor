@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -6,32 +7,98 @@ import Seo from "@/components/Seo";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Loader2, TrendingUp, Download, Eye, FileText, Sparkles,
-  ChevronRight, ArrowRight, Check, AlertTriangle, Plus, Zap,
+  Loader2, TrendingUp, Download, Eye, FileText, Sparkles, ChevronRight, ArrowRight, Check, AlertTriangle,
+  Plus, Zap, Trash2, Save, FileType, FileCode2, Copy, Lightbulb, PencilLine,
 } from "lucide-react";
 import {
-  downloadResumePDF, getTemplateList, parseOptimizedPayload,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  downloadResumePDF, getTemplateList, parseOptimizedPayload, serializeOptimizedPayload,
   hydrateResumeData, renderResumeHtml,
   type ResumeTemplate, type ResumeData, type ChangeItem,
 } from "@/lib/resume-pdf";
+import { downloadAtsPdf, downloadDocx, downloadText, hasNonLatinText, resumeToPlainText } from "@/lib/resume-export";
+import { computeGrade, scoreResume } from "@/lib/scoring";
+import { formatDate, formatRole, gradeColor } from "@/lib/format";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Item = Tables<"optimized_resumes">;
+type Tab = "changes" | "edit" | "preview" | "download";
+
+const PLACEHOLDER_RE = /\[(?:X|N|\$X|X%|[^\]]{0,24}\bX\b[^\]]{0,24})\]/g;
+
+function countPlaceholders(data: ResumeData | null): number {
+  if (!data) return 0;
+  const text = [data.summary ?? "", ...data.experience.flatMap((e) => e.responsibilities), ...data.projects.map((p) => p.description)].join("\n");
+  return (text.match(PLACEHOLDER_RE) ?? []).length;
+}
+
+/** Drops the blank lines and empty list items that appear while editing. */
+function tidy(data: ResumeData | null): ResumeData | null {
+  if (!data) return null;
+  const list = (items: string[]) => items.map((s) => s.trim()).filter(Boolean);
+  return {
+    ...data,
+    summary: data.summary?.trim(),
+    skills: list(data.skills),
+    tools: list(data.tools),
+    experience: data.experience.map((e) => ({ ...e, responsibilities: list(e.responsibilities) })),
+    projects: data.projects.map((p) => ({ ...p, description: p.description.trim() })),
+  };
+}
+
+const changeTypes: Record<string, { label: string; icon: typeof Check; color: string }> = {
+  enhanced_bullet: { label: "Enhanced", icon: Zap, color: "text-primary" },
+  added_metrics: { label: "Metrics", icon: TrendingUp, color: "text-accent" },
+  added_skill: { label: "Skill Added", icon: Plus, color: "text-accent" },
+  added_keywords: { label: "Keywords", icon: Plus, color: "text-accent" },
+  added_project: { label: "Project Added", icon: Plus, color: "text-accent" },
+  rewritten_summary: { label: "Summary", icon: Sparkles, color: "text-primary" },
+  stronger_verb: { label: "Stronger Verb", icon: ArrowRight, color: "text-secondary" },
+  reordered: { label: "Reordered", icon: ArrowRight, color: "text-secondary" },
+  design_refresh: { label: "Design", icon: Sparkles, color: "text-primary" },
+};
+
+const inputClass = "w-full glass rounded-xl px-3 py-2 bg-transparent text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all";
 
 export default function Optimizations() {
   const { user } = useAuth();
-  const [items, setItems] = useState<any[]>([]);
+  const location = useLocation();
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<any>(null);
+  const [selected, setSelected] = useState<Item | null>(null);
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [changes, setChanges] = useState<ChangeItem[]>([]);
-  const [plainText, setPlainText] = useState("");
-  const [template, setTemplate] = useState<ResumeTemplate>("executive");
-  const [showPreview, setShowPreview] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [payloadMode, setPayloadMode] = useState<string | undefined>();
+  const [jobDescription, setJobDescription] = useState("");
+  const [originalText, setOriginalText] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [template, setTemplate] = useState<ResumeTemplate>("ats");
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [activeTab, setActiveTab] = useState<"changes" | "preview" | "download">("changes");
+  const [activeTab, setActiveTab] = useState<Tab>("changes");
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Item | null>(null);
 
   const templates = getTemplateList();
+  const cleanData = useMemo(() => tidy(resumeData), [resumeData]);
+  const placeholderCount = useMemo(() => countPlaceholders(cleanData), [cleanData]);
+  const previewHtml = useMemo(() => renderResumeHtml(template, cleanData), [template, cleanData]);
 
-  // --- Live preview scaling: fit the 210mm-wide resume into its container
-  // without ever clipping its height. ---
+  // Re-score the current (possibly edited) content with the same deterministic engine as the server.
+  const liveScore = useMemo(() => {
+    if (!selected || !cleanData) return null;
+    try {
+      return scoreResume(cleanData, selected.job_role, resumeToPlainText(cleanData), jobDescription).overall_score;
+    } catch {
+      return null;
+    }
+  }, [selected, cleanData, jobDescription]);
+
+  // --- Live preview scaling: fit the 210mm-wide resume into its container without clipping its height.
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
   const resumeRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(0.6);
@@ -43,19 +110,16 @@ export default function Optimizations() {
       const wrap = previewWrapRef.current;
       const inner = resumeRef.current;
       if (!wrap || !inner) return;
-      const w = wrap.clientWidth;
-      const s = Math.min(1, w / A4_WIDTH_PX);
+      const s = Math.min(1, wrap.clientWidth / A4_WIDTH_PX);
       setScale(s);
-      // measure unscaled height of the resume, then apply scale
-      const naturalH = inner.scrollHeight;
-      setScaledHeight(Math.max(400, naturalH * s));
+      setScaledHeight(Math.max(400, inner.scrollHeight * s));
     };
     recalc();
     const ro = new ResizeObserver(recalc);
     if (previewWrapRef.current) ro.observe(previewWrapRef.current);
     if (resumeRef.current) ro.observe(resumeRef.current);
     return () => ro.disconnect();
-  }, [template, resumeData, activeTab]);
+  }, [previewHtml, activeTab]);
 
   useEffect(() => {
     if (!user) return;
@@ -70,91 +134,155 @@ export default function Optimizations() {
       });
   }, [user]);
 
-  const selectItem = async (item: any) => {
+  const selectItem = async (item: Item) => {
+    if (dirty && !window.confirm("Discard unsaved edits?")) return;
+    setDirty(false);
     if (selected?.id === item.id) {
       setSelected(null);
       setResumeData(null);
-      setChanges([]);
-      setShowPreview(false);
       return;
     }
     setSelected(item);
-    setShowPreview(true);
     setLoadingDetail(true);
     setActiveTab("changes");
 
-    const { data: originalResume } = item.resume_id
-      ? await supabase
-        .from("resumes")
-        .select("original_text, parsed_json")
-        .eq("id", item.resume_id)
-        .maybeSingle()
-      : { data: null };
+    const [{ data: originalResume }, { data: analysis }] = await Promise.all([
+      supabase.from("resumes").select("original_text, parsed_json").eq("id", item.resume_id).maybeSingle(),
+      supabase.from("analyses").select("job_description").eq("id", item.analysis_id).maybeSingle(),
+    ]);
+    setJobDescription(analysis?.job_description ?? "");
+    setOriginalText(originalResume?.original_text ?? "");
 
-    // Parse the structured payload and hydrate it with the original parsed resume
-    // so links, languages, skills, education, projects, and all other facts are never dropped.
+    // Hydrate with the original parse so contact links, languages and other facts are never dropped.
     const payload = parseOptimizedPayload(item.optimized_text);
+    const original = originalResume?.parsed_json as unknown as ResumeData | null;
     if (payload) {
-      const hydrated = hydrateResumeData(
-        payload.structured,
-        [originalResume?.original_text, payload.text].filter(Boolean).join("\n"),
-        originalResume?.parsed_json as unknown as ResumeData | null,
-      );
+      const hydrated = hydrateResumeData(payload.structured, [originalResume?.original_text, payload.text].filter(Boolean).join("\n"), original);
       setResumeData(hydrated);
       setChanges(hydrated.changes_made || []);
-      setPlainText(payload.text);
+      setSuggestions(payload.suggestions);
+      setPayloadMode(payload.mode);
     } else {
-      // Legacy format — just plain text
-      setPlainText(item.optimized_text);
+      // Legacy format — plain text only.
+      setResumeData(hydrateResumeData(original, item.optimized_text));
       setChanges([]);
-      setResumeData(hydrateResumeData(originalResume?.parsed_json as unknown as ResumeData | null, item.optimized_text));
+      setSuggestions([]);
+      setPayloadMode(undefined);
     }
     setLoadingDetail(false);
   };
 
-  const [downloading, setDownloading] = useState(false);
-  const handleDownload = async () => {
-    if (!selected || downloading) return;
-    setDownloading(true);
+  // Open the optimization we were just sent here for.
+  const autoSelectId = (location.state as { select?: string } | null)?.select;
+  const autoSelected = useRef(false);
+  useEffect(() => {
+    if (autoSelected.current || !autoSelectId || items.length === 0) return;
+    const item = items.find((i) => i.id === autoSelectId);
+    if (item) {
+      autoSelected.current = true;
+      selectItem(item);
+    }
+    // selectItem is intentionally not a dependency: this runs once when the list arrives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, autoSelectId]);
+
+  const edit = (updater: (d: ResumeData) => ResumeData) => {
+    setResumeData((d) => (d ? updater(d) : d));
+    setDirty(true);
+  };
+
+  const saveEdits = async () => {
+    if (!selected || !cleanData) return;
+    setSaving(true);
+    const text = resumeToPlainText(cleanData);
+    const after = liveScore ?? selected.after_score;
+    const update = {
+      optimized_text: serializeOptimizedPayload({ text, structured: { ...cleanData, changes_made: changes }, suggestions, mode: payloadMode }),
+      after_score: after,
+      improvement_percentage: after - selected.before_score,
+    };
+    const { error } = await supabase.from("optimized_resumes").update(update).eq("id", selected.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Could not save: " + error.message);
+      return;
+    }
+    const next = { ...selected, ...update };
+    setSelected(next);
+    setItems((list) => list.map((i) => (i.id === next.id ? next : i)));
+    setResumeData(cleanData);
+    setDirty(false);
+    toast.success("Edits saved");
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { error } = await supabase.from("optimized_resumes").delete().eq("id", pendingDelete.id);
+    if (error) {
+      toast.error("Could not delete: " + error.message);
+      return;
+    }
+    setItems((list) => list.filter((i) => i.id !== pendingDelete.id));
+    if (selected?.id === pendingDelete.id) {
+      setSelected(null);
+      setResumeData(null);
+      setDirty(false);
+    }
+    setPendingDelete(null);
+    toast.success("Optimization deleted");
+  };
+
+  const baseName = () => {
+    const name = (cleanData?.contact.name || "resume").trim().replace(/[^\w-]+/g, "-").replace(/-+/g, "-").toLowerCase();
+    return `${name}-${selected?.job_role ?? "resume"}`;
+  };
+
+  const runExport = async (kind: string, fn: () => Promise<void> | void) => {
+    if (!cleanData || exporting) return;
+    if (placeholderCount > 0 && !window.confirm(`Your resume still has ${placeholderCount} [X] placeholder(s). Export anyway?`)) return;
+    setExporting(kind);
     try {
-      toast.loading("Generating PDF…", { id: "pdf" });
-      await downloadResumePDF(plainText, resumeData, template, `resume-${selected.job_role}-${template}.pdf`);
-      toast.success("Resume downloaded ✓", { id: "pdf" });
-    } catch (e: any) {
-      toast.error("Failed to generate PDF: " + (e?.message || "unknown"), { id: "pdf" });
+      await fn();
+      toast.success("Downloaded ✓");
+    } catch (e) {
+      toast.error("Export failed: " + (e instanceof Error ? e.message : "unknown error"));
     } finally {
-      setDownloading(false);
+      setExporting(null);
     }
   };
 
-  const gradeForScore = (score: number) => {
-    if (score >= 90) return { letter: "A", color: "text-accent" };
-    if (score >= 80) return { letter: "B", color: "text-primary" };
-    if (score >= 70) return { letter: "C", color: "text-secondary" };
-    return { letter: "D", color: "text-destructive" };
+  const exportAtsPdf = () => runExport("ats", async () => {
+    if (hasNonLatinText(cleanData!)) {
+      toast.warning("Some characters aren't supported by the ATS PDF font — use the Word export for non-Latin text.");
+    }
+    await downloadAtsPdf(cleanData!, `${baseName()}.pdf`);
+  });
+  const exportDesignPdf = () => runExport("design", () => downloadResumePDF(resumeToPlainText(cleanData!), cleanData, template, `${baseName()}-${template}.pdf`));
+  const exportDocx = () => runExport("docx", () => downloadDocx(cleanData!, `${baseName()}.docx`));
+  const exportTxt = () => runExport("txt", () => downloadText(cleanData!, `${baseName()}.txt`));
+  const copyText = async () => {
+    if (!cleanData) return;
+    await navigator.clipboard.writeText(resumeToPlainText(cleanData));
+    toast.success("Copied to clipboard");
   };
 
-  const changeTypeLabel = (type: string) => {
-    const labels: Record<string, { label: string; icon: typeof Check; color: string }> = {
-      enhanced_bullet: { label: "Enhanced", icon: Zap, color: "text-primary" },
-      added_metrics: { label: "Metrics Added", icon: TrendingUp, color: "text-accent" },
-      added_skill: { label: "Skill Added", icon: Plus, color: "text-accent" },
-      added_project: { label: "Project Added", icon: Plus, color: "text-accent" },
-      rewritten_summary: { label: "Rewritten", icon: Sparkles, color: "text-primary" },
-      stronger_verb: { label: "Verb Improved", icon: ArrowRight, color: "text-secondary" },
-    };
-    return labels[type] || { label: type, icon: Check, color: "text-muted-foreground" };
-  };
+  const delta = (i: Pick<Item, "after_score" | "before_score">) => i.after_score - i.before_score;
+  const deltaLabel = (d: number) => (d > 0 ? `+${d} pts` : d === 0 ? "±0 pts" : `${d} pts`);
 
-  const formatRoleName = (role: string) => role.replace(/-/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "changes", label: `Changes (${changes.length})` },
+    { id: "edit", label: dirty ? "Edit •" : "Edit" },
+    { id: "preview", label: "Preview" },
+    { id: "download", label: "Export" },
+  ];
 
   return (
     <DashboardLayout>
-      <Seo title="Optimizations — AI Resume Builder" description="Download AI-optimized versions of your resume in multiple professional templates and review every change made." path="/dashboard/optimizations" />
+      <Seo title="Optimizations — AI Resume Builder" description="Review, edit and export AI-optimized versions of your resume as ATS-friendly PDF, Word or text." path="/dashboard/optimizations" />
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="font-heading font-bold text-3xl mb-1">Optimized Resumes</h1>
-          <p className="text-muted-foreground text-sm">AI-enhanced versions with tracked changes & professional PDF export.</p>
+          <p className="text-muted-foreground text-sm">Review every change, fill in placeholders, and export ATS-readable PDF, Word or text.</p>
         </div>
 
         {loading ? (
@@ -168,101 +296,106 @@ export default function Optimizations() {
         ) : (
           <div className="grid lg:grid-cols-[300px_1fr] gap-6">
             {/* Left: list */}
-            <div className="space-y-2">
+            <ul className="space-y-2" aria-label="Optimizations">
               {items.map((item) => {
                 const isActive = selected?.id === item.id;
-                const before = gradeForScore(item.before_score);
-                const after = gradeForScore(item.after_score);
+                const d = delta(item);
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => selectItem(item)}
-                    className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${
-                      isActive
-                        ? "glass border-primary/50 shadow-lg shadow-primary/10"
-                        : "glass-hover border-transparent"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </span>
-                      <div className="flex items-center gap-1.5 text-accent text-xs font-bold">
-                        <TrendingUp className="w-3 h-3" />
-                        +{item.improvement_percentage}%
+                  <li key={item.id} className="relative group">
+                    <button
+                      onClick={() => selectItem(item)}
+                      aria-current={isActive}
+                      className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${
+                        isActive ? "glass border-primary/50 shadow-lg shadow-primary/10" : "glass-hover border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2 pr-6">
+                        <span className="text-xs text-muted-foreground font-mono">{formatDate(item.created_at)}</span>
+                        <span className={`flex items-center gap-1 text-xs font-bold ${d > 0 ? "text-accent" : "text-muted-foreground"}`}>
+                          <TrendingUp className="w-3 h-3" /> {deltaLabel(d)}
+                        </span>
                       </div>
-                    </div>
-                    <p className="font-heading font-bold text-sm mb-2">{formatRoleName(item.job_role)}</p>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className={`font-bold ${before.color}`}>{item.before_score}%</span>
-                      <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                      <span className={`font-bold ${after.color}`}>{item.after_score}%</span>
-                    </div>
-                  </button>
+                      <p className="font-heading font-bold text-sm mb-2">{formatRole(item.job_role)}</p>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={`font-bold ${gradeColor(computeGrade(item.before_score))}`}>{item.before_score}</span>
+                        <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                        <span className={`font-bold ${gradeColor(computeGrade(item.after_score))}`}>{item.after_score}</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setPendingDelete(item)}
+                      aria-label={`Delete optimization for ${formatRole(item.job_role)}`}
+                      className="absolute top-3 right-3 p-1 rounded-md text-muted-foreground opacity-60 hover:opacity-100 hover:text-destructive focus:opacity-100 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
 
             {/* Right: detail */}
             <AnimatePresence mode="wait">
-              {selected && showPreview ? (
-                <motion.div
-                  key={selected.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  className="space-y-5"
-                >
-                  {/* Score improvement */}
+              {selected ? (
+                <motion.div key={selected.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-5 min-w-0">
+                  {/* Score */}
                   <div className="glass rounded-2xl p-6 border border-accent/20">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="font-heading font-bold text-lg">Score Improvement</h2>
-                      <div className="flex items-center gap-2 text-accent font-heading font-bold text-xl">
-                        <TrendingUp className="w-5 h-5" />
-                        +{selected.improvement_percentage}%
+                    <div className="flex items-center justify-between mb-4 gap-3">
+                      <h2 className="font-heading font-bold text-lg">ATS Score (re-scored)</h2>
+                      <div className={`flex items-center gap-2 font-heading font-bold text-xl ${delta(selected) > 0 ? "text-accent" : "text-muted-foreground"}`}>
+                        <TrendingUp className="w-5 h-5" /> {deltaLabel((liveScore ?? selected.after_score) - selected.before_score)}
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-4 items-center">
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">Before</p>
-                        <p className="font-heading font-bold text-2xl text-destructive">{selected.before_score}%</p>
+                        <p className="text-xs text-muted-foreground mb-1">Original</p>
+                        <p className="font-heading font-bold text-2xl">{selected.before_score}</p>
                       </div>
-                      <div className="flex items-center justify-center">
-                        <div className="w-full h-[2px] bg-gradient-to-r from-destructive via-primary to-accent rounded-full" />
-                      </div>
+                      <div className="h-[2px] bg-gradient-to-r from-destructive via-primary to-accent rounded-full" />
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-1">After</p>
-                        <p className="font-heading font-bold text-2xl text-accent">{selected.after_score}%</p>
+                        <p className="text-xs text-muted-foreground mb-1">{dirty ? "Current (unsaved)" : "Optimized"}</p>
+                        <p className="font-heading font-bold text-2xl text-accent">{liveScore ?? selected.after_score}</p>
                       </div>
                     </div>
+                    {placeholderCount > 0 && (
+                      <button onClick={() => setActiveTab("edit")} className="mt-4 w-full flex items-center gap-2 text-left text-xs rounded-lg px-3 py-2 bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        {placeholderCount} [X] placeholder{placeholderCount === 1 ? "" : "s"} to fill in with your real numbers — open the editor
+                      </button>
+                    )}
                   </div>
 
-                  {/* Tab bar */}
-                  <div className="glass rounded-xl p-1 flex gap-1">
-                    {(["changes", "preview", "download"] as const).map((tab) => (
+                  {/* Tabs */}
+                  <div className="glass rounded-xl p-1 grid grid-cols-4 gap-1" role="tablist">
+                    {tabs.map((tab) => (
                       <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-heading font-bold transition-all capitalize ${
-                          activeTab === tab
-                            ? "bg-primary/20 text-primary"
-                            : "text-muted-foreground hover:text-foreground"
+                        key={tab.id}
+                        role="tab"
+                        aria-selected={activeTab === tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`py-2.5 rounded-lg text-xs sm:text-sm font-heading font-bold transition-all ${
+                          activeTab === tab.id ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {tab === "changes" ? `Changes (${changes.length})` : tab === "preview" ? "Resume Preview" : "Download PDF"}
+                        {tab.label}
                       </button>
                     ))}
                   </div>
 
-                  {loadingDetail ? (
-                    <div className="glass rounded-2xl p-12 flex justify-center">
-                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    </div>
+                  {loadingDetail || !resumeData ? (
+                    <div className="glass rounded-2xl p-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                   ) : (
                     <>
-                      {/* Changes tab */}
                       {activeTab === "changes" && (
                         <div className="space-y-3">
+                          {suggestions.length > 0 && (
+                            <div className="glass rounded-xl p-4 border border-primary/20">
+                              <p className="text-sm font-heading font-bold flex items-center gap-2 mb-2"><Lightbulb className="w-4 h-4 text-primary" /> Add these only if they're true</p>
+                              <ul className="space-y-1.5 text-sm text-muted-foreground list-disc pl-5">
+                                {suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                              </ul>
+                            </div>
+                          )}
                           {changes.length === 0 ? (
                             <div className="glass rounded-2xl p-8 text-center text-muted-foreground text-sm">
                               <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-40" />
@@ -270,20 +403,14 @@ export default function Optimizations() {
                             </div>
                           ) : (
                             changes.map((change, i) => {
-                              const ct = changeTypeLabel(change.type);
+                              const ct = changeTypes[change.type] ?? { label: change.type, icon: Check, color: "text-muted-foreground" };
                               const Icon = ct.icon;
                               return (
-                                <motion.div
-                                  key={i}
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: i * 0.04 }}
-                                  className="glass rounded-xl p-4 border border-glass-border"
-                                >
+                                <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i, 15) * 0.03 }} className="glass rounded-xl p-4 border border-glass-border">
                                   <div className="flex items-center gap-2 mb-2">
                                     <Icon className={`w-4 h-4 ${ct.color}`} />
                                     <span className={`text-xs font-bold ${ct.color}`}>{ct.label}</span>
-                                    <span className="text-xs text-muted-foreground ml-auto">{change.location}</span>
+                                    <span className="text-xs text-muted-foreground ml-auto truncate">{change.location}</span>
                                   </div>
                                   {change.before && (
                                     <div className="mb-2 p-3 rounded-lg bg-destructive/5 border border-destructive/10">
@@ -302,92 +429,132 @@ export default function Optimizations() {
                         </div>
                       )}
 
-                      {/* Preview tab */}
+                      {activeTab === "edit" && (
+                        <div className="glass rounded-2xl p-5 space-y-5">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm text-muted-foreground flex items-center gap-2"><PencilLine className="w-4 h-4" /> Replace every <span className="font-mono">[X]</span> with your real figures. One bullet per line.</p>
+                            <button onClick={saveEdits} disabled={!dirty || saving} className="btn-primary !text-sm !py-2 !px-4 flex items-center gap-2 disabled:opacity-50 shrink-0">
+                              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
+                            </button>
+                          </div>
+                          <div>
+                            <label htmlFor="edit-summary" className="text-xs text-muted-foreground mb-1 block">Summary</label>
+                            <textarea id="edit-summary" rows={4} className={inputClass} value={resumeData.summary ?? ""} onChange={(e) => edit((d) => ({ ...d, summary: e.target.value }))} />
+                          </div>
+                          {resumeData.experience.map((exp, i) => (
+                            <div key={i}>
+                              <label htmlFor={`edit-exp-${i}`} className="text-xs text-muted-foreground mb-1 block">
+                                <span className="text-foreground font-medium">{exp.role}</span> — {exp.company} <span className="font-mono">({exp.duration})</span>
+                              </label>
+                              <textarea
+                                id={`edit-exp-${i}`}
+                                rows={Math.min(10, Math.max(3, exp.responsibilities.length + 1))}
+                                className={inputClass}
+                                value={exp.responsibilities.join("\n")}
+                                onChange={(e) => edit((d) => ({
+                                  ...d,
+                                  experience: d.experience.map((x, j) => (j === i ? { ...x, responsibilities: e.target.value.split("\n") } : x)),
+                                }))}
+                              />
+                            </div>
+                          ))}
+                          {resumeData.projects.map((p, i) => (
+                            <div key={i}>
+                              <label htmlFor={`edit-proj-${i}`} className="text-xs text-muted-foreground mb-1 block">Project — <span className="text-foreground font-medium">{p.name}</span></label>
+                              <textarea id={`edit-proj-${i}`} rows={3} className={inputClass} value={p.description} onChange={(e) => edit((d) => ({
+                                ...d, projects: d.projects.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)),
+                              }))} />
+                            </div>
+                          ))}
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label htmlFor="edit-skills" className="text-xs text-muted-foreground mb-1 block">Skills (comma-separated)</label>
+                              <textarea id="edit-skills" rows={3} className={inputClass} value={resumeData.skills.join(", ")} onChange={(e) => edit((d) => ({ ...d, skills: e.target.value.split(",").map((s) => s.trimStart()) }))} />
+                            </div>
+                            <div>
+                              <label htmlFor="edit-tools" className="text-xs text-muted-foreground mb-1 block">Tools (comma-separated)</label>
+                              <textarea id="edit-tools" rows={3} className={inputClass} value={resumeData.tools.join(", ")} onChange={(e) => edit((d) => ({ ...d, tools: e.target.value.split(",").map((s) => s.trimStart()) }))} />
+                            </div>
+                          </div>
+                          {originalText && (
+                            <details className="text-xs text-muted-foreground">
+                              <summary className="cursor-pointer select-none">Show original resume text for reference</summary>
+                              <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] max-h-72 overflow-auto glass rounded-lg p-3">{originalText}</pre>
+                            </details>
+                          )}
+                        </div>
+                      )}
+
                       {activeTab === "preview" && (
                         <div className="glass rounded-2xl overflow-hidden">
                           <div className="px-5 py-3 border-b border-glass-border flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2">
                               <FileText className="w-4 h-4 text-primary" />
-                              <span className="font-heading font-bold text-sm">Live Preview — {templates.find(t => t.id === template)?.name}</span>
+                              <span className="font-heading font-bold text-sm">Live Preview</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <select
-                                value={template}
-                                onChange={(e) => setTemplate(e.target.value as ResumeTemplate)}
-                                className="bg-background border border-glass-border rounded-md px-2 py-1 text-xs"
-                              >
-                                {templates.map((t) => (
-                                  <option key={t.id} value={t.id}>{t.name}</option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={handleDownload}
-                                disabled={downloading}
-                                className="text-xs px-3 py-1 rounded-md bg-primary/20 text-primary hover:bg-primary/30 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} PDF
-                              </button>
-                            </div>
+                            <label className="sr-only" htmlFor="preview-template">Template</label>
+                            <select id="preview-template" value={template} onChange={(e) => setTemplate(e.target.value as ResumeTemplate)} className="bg-background border border-glass-border rounded-md px-2 py-1 text-xs">
+                              {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
                           </div>
-                          {/* Full-resume live preview. Width is auto-scaled to the
-                              container; height grows with content — never clipped. */}
                           <div className="bg-muted/30 p-4 overflow-auto">
                             <div
                               ref={previewWrapRef}
-                              style={{
-                                width: "100%",
-                                height: scaledHeight ? `${scaledHeight}px` : "auto",
-                                position: "relative",
-                                background: "#fff",
-                                borderRadius: 8,
-                                boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
-                                overflow: "visible",
-                              }}
+                              style={{ width: "100%", height: scaledHeight ? `${scaledHeight}px` : "auto", position: "relative", background: "#fff", borderRadius: 8, boxShadow: "0 4px 24px rgba(0,0,0,0.18)" }}
                             >
                               <div
                                 ref={resumeRef}
-                                style={{
-                                  width: "794px",
-                                  transformOrigin: "top left",
-                                  transform: `scale(${scale})`,
-                                  background: "#fff",
-                                }}
-                                dangerouslySetInnerHTML={{ __html: renderResumeHtml(template, resumeData) }}
+                                style={{ width: "794px", transformOrigin: "top left", transform: `scale(${scale})`, background: "#fff" }}
+                                // All resume values are HTML-escaped by the template renderer.
+                                dangerouslySetInnerHTML={{ __html: previewHtml }}
                               />
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Download tab */}
                       {activeTab === "download" && (
                         <div className="space-y-4">
                           <div className="glass rounded-2xl p-5">
-                            <h3 className="font-heading font-bold text-sm mb-3">Choose Template</h3>
-                            <div className="grid grid-cols-2 gap-2">
+                            <h3 className="font-heading font-bold text-sm mb-1">Recommended for online applications</h3>
+                            <p className="text-xs text-muted-foreground mb-4">Real, selectable text in a single-column layout that every ATS parses correctly.</p>
+                            <div className="grid sm:grid-cols-2 gap-2">
+                              <button onClick={exportAtsPdf} disabled={!!exporting} className="btn-primary !text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                                {exporting === "ats" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileType className="w-4 h-4" />} ATS PDF
+                              </button>
+                              <button onClick={exportDocx} disabled={!!exporting} className="glass rounded-xl px-4 py-3 text-sm font-heading font-bold flex items-center justify-center gap-2 hover:bg-glass-hover disabled:opacity-50">
+                                {exporting === "docx" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode2 className="w-4 h-4" />} Word (.docx)
+                              </button>
+                              <button onClick={exportTxt} disabled={!!exporting} className="glass rounded-xl px-4 py-3 text-sm font-heading font-bold flex items-center justify-center gap-2 hover:bg-glass-hover disabled:opacity-50">
+                                <FileText className="w-4 h-4" /> Plain text (.txt)
+                              </button>
+                              <button onClick={copyText} className="glass rounded-xl px-4 py-3 text-sm font-heading font-bold flex items-center justify-center gap-2 hover:bg-glass-hover">
+                                <Copy className="w-4 h-4" /> Copy text
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="glass rounded-2xl p-5">
+                            <h3 className="font-heading font-bold text-sm mb-1">Designed PDF</h3>
+                            <p className="text-xs text-muted-foreground mb-4">Pixel-perfect visual templates for emailing or printing. Rendered as an image, so use the ATS PDF for job portals.</p>
+                            <div className="grid grid-cols-2 gap-2 mb-4" role="radiogroup" aria-label="Template">
                               {templates.map((t) => (
                                 <button
                                   key={t.id}
+                                  role="radio"
+                                  aria-checked={template === t.id}
                                   onClick={() => setTemplate(t.id)}
-                                  className={`rounded-xl p-3 text-left transition-all border ${
-                                    template === t.id
-                                      ? "border-primary bg-primary/10"
-                                      : "border-transparent glass hover:bg-glass-hover"
-                                  }`}
+                                  className={`rounded-xl p-3 text-left transition-all border ${template === t.id ? "border-primary bg-primary/10" : "border-transparent glass hover:bg-glass-hover"}`}
                                 >
                                   <p className="font-heading font-bold text-sm">{t.name}</p>
                                   <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
                                 </button>
                               ))}
                             </div>
+                            <button onClick={exportDesignPdf} disabled={!!exporting} className="glass rounded-xl w-full px-4 py-3 text-sm font-heading font-bold flex items-center justify-center gap-2 hover:bg-glass-hover disabled:opacity-50">
+                              {exporting === "design" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download {templates.find((t) => t.id === template)?.name} PDF
+                            </button>
                           </div>
-
-                          <button
-                            onClick={handleDownload}
-                            className="btn-primary w-full flex items-center justify-center gap-2"
-                          >
-                            <Download className="w-5 h-5" /> Download as PDF — {templates.find(t => t.id === template)?.name}
-                          </button>
                         </div>
                       )}
                     </>
@@ -396,13 +563,26 @@ export default function Optimizations() {
               ) : (
                 <div className="glass rounded-2xl p-12 flex flex-col items-center justify-center text-center">
                   <Eye className="w-10 h-10 text-muted-foreground mb-3 opacity-40" />
-                  <p className="text-muted-foreground text-sm">Select an optimization to view changes & download</p>
+                  <p className="text-muted-foreground text-sm">Select an optimization to review, edit and export</p>
                 </div>
               )}
             </AnimatePresence>
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this optimization?</AlertDialogTitle>
+            <AlertDialogDescription>The optimized version and your edits will be removed. Your original resume and analysis are kept.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

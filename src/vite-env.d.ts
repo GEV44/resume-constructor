@@ -3,13 +3,11 @@
 interface ImportMetaEnv {
   readonly VITE_SITE_URL?: string;
   readonly VITE_API_URL?: string;
+  readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string;
+  readonly VITE_SUPABASE_PROJECT_ID?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
-}
-
-declare module "html2pdf.js" {
-  const html2pdf: any;
-  export default html2pdf;
 }

@@ -9,19 +9,19 @@ import Seo from "@/components/Seo";
 import { SITE_URL } from "@/lib/site";
 
 const features = [
-  { icon: FileText,   title: "Smart Parsing",          desc: "AI extracts and structures your PDF or DOCX instantly." },
-  { icon: BarChart3,  title: "Deterministic Scoring",   desc: "Same resume, same role, same score — every time." },
-  { icon: Sparkles,   title: "AI Optimization",         desc: "Sharper wording and ATS keywords, never fabricated." },
-  { icon: Target,     title: "36 Job Roles",            desc: "Tailored for Tech, Business, Finance, HR, and Design." },
-  { icon: TrendingUp, title: "Progress Tracking",       desc: "Compare scores over time and review every AI suggestion." },
-  { icon: Shield,     title: "Private & Secure",        desc: "Row-level security — your data stays yours, always." },
+  { icon: FileText,   title: "Smart Parsing",          desc: "AI extracts and structures your PDF or DOCX in seconds." },
+  { icon: BarChart3,  title: "Deterministic Scoring",   desc: "Same resume, same role, same score — across 36 roles in 5 fields." },
+  { icon: Target,     title: "Job-Description Match",   desc: "Paste any posting to see which keywords you cover and which you're missing." },
+  { icon: Sparkles,   title: "Honest AI Rewrites",      desc: "Stronger bullets and keywords — unknown numbers become [X] placeholders you fill in." },
+  { icon: Download,   title: "ATS-Readable Exports",    desc: "Selectable-text PDF, Word and plain text, plus 10 designed templates." },
+  { icon: Shield,     title: "Private & Secure",        desc: "Row-level security, one-click data export and account deletion." },
 ];
 
 const stats = [
   { value: "36",   label: "Job Roles" },
-  { value: "10",   label: "PDF Templates" },
-  { value: "100%", label: "ATS Friendly" },
-  { value: "0",    label: "Hallucinations" },
+  { value: "10",   label: "Designed Templates" },
+  { value: "3",    label: "ATS Export Formats" },
+  { value: "100%", label: "Deterministic Score" },
 ];
 
 const pills = [
@@ -34,7 +34,7 @@ const steps = [
   { icon: Upload,   title: "Upload",   desc: "Drop your PDF or DOCX — we parse it in seconds, structured and clean." },
   { icon: BarChart3, title: "Score",    desc: "Get a deterministic ATS score against any of 36 target roles." },
   { icon: Wand2,    title: "Optimize", desc: "AI rewrites weak bullets, adds missing keywords — no fabrication." },
-  { icon: Download, title: "Export",   desc: "Download a polished PDF in your choice of 10 recruiter-ready templates." },
+  { icon: Download, title: "Export",   desc: "Edit, then download an ATS-readable PDF or Word file — or one of 10 designed templates." },
 ];
 
 export default function Landing() {
@@ -62,11 +62,6 @@ export default function Landing() {
       "@type": "WebSite",
       name: "Resume Constructor — AI Resume Builder",
       url: `${SITE_URL}/`,
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${SITE_URL}/signup`,
-        "query-input": "required name=search_term_string",
-      },
     },
   ];
 

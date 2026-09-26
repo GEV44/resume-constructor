@@ -9,8 +9,11 @@ import { toast } from "sonner";
 import {
   Loader2, Sparkles, ArrowLeft, AlertTriangle, AlertCircle,
   CheckCircle2, ChevronDown, ChevronUp, Zap, Target, FileWarning,
-  Type, Hash, LayoutList, Lightbulb,
+  Type, Hash, LayoutList, Lightbulb, Briefcase,
 } from "lucide-react";
+import type { Tables } from "@/integrations/supabase/types";
+import type { JobMatch } from "@/lib/scoring";
+import { formatRole, functionError, gradeColor } from "@/lib/format";
 
 interface Problem {
   type: string;
@@ -47,16 +50,20 @@ export default function AnalysisResult() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<Tables<"analyses"> | null>(null);
   const [loading, setLoading] = useState(true);
   const [optimizing, setOptimizing] = useState(false);
   const [optimizeStep, setOptimizeStep] = useState("");
   const [expandedProblems, setExpandedProblems] = useState<Set<number>>(new Set());
   const [optimizeMode, setOptimizeMode] = useState<"text" | "design" | "both">("both");
 
-  // Problems from navigation state (AI-generated)
-  const problems: Problem[] = (location.state as any)?.problems || [];
-  const structureIssues: string[] = (location.state as any)?.structure_issues || [];
+  // Findings are stored on the analysis; navigation state covers older function deployments.
+  const navState = location.state as { problems?: Problem[]; structure_issues?: string[] } | null;
+  const storedProblems = Array.isArray(analysis?.problems) ? (analysis.problems as unknown as Problem[]) : [];
+  const storedStructure = Array.isArray(analysis?.structure_issues) ? (analysis.structure_issues as string[]) : [];
+  const problems: Problem[] = storedProblems.length ? storedProblems : navState?.problems || [];
+  const structureIssues: string[] = storedStructure.length ? storedStructure : navState?.structure_issues || [];
+  const jobMatch = (analysis?.job_match ?? null) as unknown as JobMatch | null;
 
   useEffect(() => {
     if (!id || !user) return;
@@ -71,7 +78,7 @@ export default function AnalysisResult() {
         setAnalysis(data);
         setLoading(false);
       });
-  }, [id, user]);
+  }, [id, user, navigate]);
 
   const toggleProblem = (i: number) => {
     setExpandedProblems((prev) => {
@@ -95,36 +102,33 @@ export default function AnalysisResult() {
 
       if (!resume) throw new Error("Resume not found");
 
-      setOptimizeStep("Optimizing with AI (this may take 15-30s)...");
+      setOptimizeStep(optimizeMode === "design" ? "Applying design…" : "Rewriting with AI (usually 15–40s)…");
       const response = await supabase.functions.invoke("optimize-resume", {
         body: {
+          analysisId: analysis.id,
+          mode: optimizeMode,
+          // Legacy fields for older deployments of the function.
           resumeText: resume.original_text,
           parsed: resume.parsed_json,
           jobRoleId: analysis.job_role,
-          analysisId: analysis.id,
           resumeId: analysis.resume_id,
           currentScore: analysis.overall_score,
           missingSkills: analysis.missing_skills,
           recommendations: analysis.recommendations,
-          mode: optimizeMode,
         },
       });
 
-      if (response.error) {
-        const errMsg = typeof response.error === "object" && response.error.message
-          ? response.error.message : String(response.error);
-        throw new Error(errMsg);
-      }
-
+      const errMsg = await functionError(response.error, response.data);
       const data = response.data;
-      if (!data || data.error) throw new Error(data?.error || "Optimization failed.");
+      if (errMsg || !data) throw new Error(errMsg || "Optimization failed.");
 
       setOptimizeStep("Done!");
-      toast.success(`Optimized! Score improved from ${data.before_score}% to ${data.after_score}%`);
-      navigate("/dashboard/optimizations");
-    } catch (err: any) {
+      const delta = data.after_score - data.before_score;
+      toast.success(delta > 0 ? `Optimized! Re-scored ${data.before_score} → ${data.after_score}` : "Optimized! Review and fill in any [X] placeholders.");
+      navigate("/dashboard/optimizations", { state: { select: data.id } });
+    } catch (err) {
       if (import.meta.env.DEV) console.error(err);
-      toast.error(err.message || "Optimization failed. Please try again.");
+      toast.error(err instanceof Error ? err.message : "Optimization failed. Please try again.");
     } finally {
       setOptimizing(false);
       setOptimizeStep("");
@@ -144,7 +148,7 @@ export default function AnalysisResult() {
   const missingSkills = (analysis.missing_skills as string[]) || [];
   const strengths = (analysis.strengths as string[]) || [];
   const recommendations = (analysis.recommendations as string[]) || [];
-  const gradeColor = analysis.grade === "A" ? "text-accent" : analysis.grade === "B" ? "text-primary" : analysis.grade === "C" ? "text-secondary" : "text-destructive";
+  const roleName = formatRole(analysis.job_role);
 
   const criticalCount = problems.filter((p) => p.severity === "critical").length;
   const majorCount = problems.filter((p) => p.severity === "major").length;
@@ -153,8 +157,8 @@ export default function AnalysisResult() {
   return (
     <DashboardLayout>
       <Seo
-        title={`Analysis Results — ${analysis.job_role.replace(/-/g, " ")}`}
-        description={`Resume analysis for ${analysis.job_role.replace(/-/g, " ")}: overall score, grade, problems, and AI-powered optimization suggestions.`}
+        title={`Analysis Results — ${roleName}`}
+        description={`Resume analysis for ${roleName}: overall score, grade, problems, and AI-powered optimization suggestions.`}
         path={`/dashboard/analysis/${analysis.id}`}
       />
       <div className="max-w-4xl mx-auto">
@@ -165,7 +169,7 @@ export default function AnalysisResult() {
         {/* Score header */}
         <div className="glass rounded-3xl p-8 text-center mb-8">
           <h1 className="font-heading font-bold text-2xl mb-2">
-            Analysis Results — {analysis.job_role.replace(/-/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+            Analysis Results — {roleName}
           </h1>
           <p className="text-muted-foreground text-sm mb-2">Overall Score</p>
           <motion.p
@@ -176,7 +180,8 @@ export default function AnalysisResult() {
           >
             {analysis.overall_score}%
           </motion.p>
-          <p className={`font-heading font-bold text-xl mt-2 ${gradeColor}`}>Grade {analysis.grade}</p>
+          <p className={`font-heading font-bold text-xl mt-2 ${gradeColor(analysis.grade)}`}>Grade {analysis.grade}</p>
+          {jobMatch && <p className="text-xs text-muted-foreground">Includes {jobMatch.score}% job-description keyword match (30% weight)</p>}
 
           <div className="progress-bar-container relative bg-muted rounded-full overflow-hidden my-5 max-w-md mx-auto">
             <motion.div
@@ -203,6 +208,35 @@ export default function AnalysisResult() {
             </div>
           ))}
         </div>
+
+        {/* Job description keyword match */}
+        {jobMatch && (
+          <div className="glass rounded-2xl p-6 mb-8 border border-primary/20">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <h2 className="font-heading font-bold text-lg flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-primary" /> Job Description Match
+              </h2>
+              <span className="font-heading font-black text-2xl gradient-text">{jobMatch.score}%</span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden mb-4" role="progressbar" aria-valuenow={jobMatch.score} aria-valuemin={0} aria-valuemax={100} aria-label="Job description keyword coverage">
+              <motion.div className="h-full bg-gradient-to-r from-primary to-accent" initial={{ width: 0 }} animate={{ width: `${jobMatch.score}%` }} transition={{ duration: 1 }} />
+            </div>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Found in your resume ({jobMatch.matched.length})</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {jobMatch.matched.map((k) => <span key={k} className="px-2 py-0.5 rounded-full text-xs bg-accent/15 text-accent">✓ {k}</span>)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Missing ({jobMatch.missing.length}) — add only if true</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {jobMatch.missing.map((k) => <span key={k} className="px-2 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive">{k}</span>)}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* === PROBLEMS SECTION (AI Deep Analysis) === */}
         {problems.length > 0 && (
@@ -233,6 +267,7 @@ export default function AnalysisResult() {
                   >
                     <button
                       onClick={() => toggleProblem(i)}
+                      aria-expanded={isExpanded}
                       className="w-full text-left px-4 py-3 flex items-center gap-3"
                     >
                       <SevIcon className={`w-4 h-4 shrink-0 ${sev.color}`} />
@@ -331,14 +366,16 @@ export default function AnalysisResult() {
         {/* Mode selector */}
         <div className="glass rounded-2xl p-5 mb-4">
           <h3 className="font-heading font-bold text-sm mb-3">What should AI optimize?</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Optimization mode">
             {([
-              { id: "both", label: "Text + Design", desc: "Rewrite content & restyle" },
-              { id: "text", label: "Text Only", desc: "Rewrite bullets, keep layout" },
-              { id: "design", label: "Design Only", desc: "New template, same words" },
+              { id: "both", label: "Full Rewrite", desc: "Summary, bullets, projects & skill order" },
+              { id: "text", label: "Bullets Only", desc: "Summary & bullets, skills untouched" },
+              { id: "design", label: "Design Only", desc: "New template, same words — no AI" },
             ] as const).map((opt) => (
               <button
                 key={opt.id}
+                role="radio"
+                aria-checked={optimizeMode === opt.id}
                 onClick={() => setOptimizeMode(opt.id)}
                 className={`rounded-xl p-3 text-left transition-all border ${
                   optimizeMode === opt.id
@@ -358,9 +395,12 @@ export default function AnalysisResult() {
           {optimizing ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> {optimizeStep || "Optimizing..."}</>
           ) : (
-            <><Sparkles className="w-4 h-4" /> Optimize My Resume with AI (GPT-5)</>
+            <><Sparkles className="w-4 h-4" /> {optimizeMode === "design" ? "Restyle My Resume" : "Optimize My Resume with AI"}</>
           )}
         </button>
+        <p className="text-xs text-muted-foreground text-center mt-3">
+          The AI never invents jobs, dates or numbers — where a metric would help, it leaves an <span className="font-mono">[X]</span> placeholder for you to fill in.
+        </p>
       </div>
     </DashboardLayout>
   );

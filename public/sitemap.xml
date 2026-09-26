@@ -15,29 +15,4 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
-  <url>
-    <loc>https://resume-constructor-gev44.vercel.app/dashboard</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://resume-constructor-gev44.vercel.app/dashboard/upload</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://resume-constructor-gev44.vercel.app/dashboard/analyses</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://resume-constructor-gev44.vercel.app/dashboard/optimizations</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://resume-constructor-gev44.vercel.app/dashboard/profile</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
 </urlset>
