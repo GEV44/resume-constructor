@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,18 +21,21 @@ export default function Analyses() {
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<Analysis | null>(null);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
     if (!user) return;
-    const { data } = await supabase
+    let cancelled = false;
+    supabase
       .from("analyses")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setAnalyses(data || []);
-    setLoading(false);
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setAnalyses(data || []);
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [user]);
-
-  useEffect(() => { load(); }, [load]);
 
   const deleteAnalysis = async () => {
     if (!pendingDelete) return;

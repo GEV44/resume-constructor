@@ -121,18 +121,8 @@ export default function Optimizations() {
     return () => ro.disconnect();
   }, [previewHtml, activeTab]);
 
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("optimized_resumes")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setItems(data || []);
-        setLoading(false);
-      });
-  }, [user]);
+  // Arriving from "Optimize" passes the new row's id so it opens straight away.
+  const autoSelectId = (location.state as { select?: string } | null)?.select;
 
   const selectItem = async (item: Item) => {
     if (dirty && !window.confirm("Discard unsaved edits?")) return;
@@ -172,19 +162,26 @@ export default function Optimizations() {
     setLoadingDetail(false);
   };
 
-  // Open the optimization we were just sent here for.
-  const autoSelectId = (location.state as { select?: string } | null)?.select;
-  const autoSelected = useRef(false);
   useEffect(() => {
-    if (autoSelected.current || !autoSelectId || items.length === 0) return;
-    const item = items.find((i) => i.id === autoSelectId);
-    if (item) {
-      autoSelected.current = true;
-      selectItem(item);
-    }
-    // selectItem is intentionally not a dependency: this runs once when the list arrives.
+    if (!user) return;
+    let cancelled = false;
+    supabase
+      .from("optimized_resumes")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const list = data || [];
+        setItems(list);
+        setLoading(false);
+        const target = autoSelectId ? list.find((i) => i.id === autoSelectId) : undefined;
+        if (target) selectItem(target);
+      });
+    return () => { cancelled = true; };
+    // Load once per user; autoSelectId and selectItem are only read when the list arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, autoSelectId]);
+  }, [user]);
 
   const edit = (updater: (d: ResumeData) => ResumeData) => {
     setResumeData((d) => (d ? updater(d) : d));
