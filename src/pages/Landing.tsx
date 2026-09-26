@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   FileText, BarChart3, Sparkles, Target, TrendingUp, Shield,
   ArrowRight, Github, Linkedin, PenLine, LayoutTemplate, ChevronRight,
-  Upload, Wand2, Download,
+  Upload, Wand2, Download, FileSearch,
 } from "lucide-react";
 import Seo from "@/components/Seo";
 import { SITE_URL } from "@/lib/site";
@@ -97,6 +97,12 @@ export default function Landing() {
               <Github className="w-5 h-5" />
             </a>
             <Link
+              to="/ats-checker"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden md:inline"
+            >
+              Free ATS Check
+            </Link>
+            <Link
               to="/login"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
             >
@@ -145,9 +151,9 @@ export default function Landing() {
 
               <p className="text-[15px] md:text-lg text-muted-foreground max-w-[420px] mb-9 leading-relaxed">
                 Score against{" "}
-                <span className="text-foreground font-semibold">36 roles</span>, optimize
-                with AI, and export in{" "}
-                <span className="text-foreground font-semibold">10 polished templates</span>.
+                <span className="text-foreground font-semibold">36 roles</span> or any job posting,
+                rewrite with AI that never invents facts, and export{" "}
+                <span className="text-foreground font-semibold">ATS-readable PDF &amp; Word</span>.
               </p>
 
               {/* Pills */}
@@ -175,19 +181,17 @@ export default function Landing() {
                   Create Your Resume
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <a
-                  href="https://github.com/GEV44/resume-constructor"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/ats-checker"
                   className="inline-flex items-center gap-2 rounded-full px-5 sm:px-7 py-3.5 sm:py-4 border border-glass-border text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-white/5 hover:border-white/25 transition-all duration-300"
                 >
-                  <Github className="w-4 h-4" />
-                  GitHub
-                </a>
+                  <FileSearch className="w-4 h-4" />
+                  Free ATS Check
+                </Link>
               </div>
 
               <p className="mt-7 text-[11px] text-muted-foreground/80 font-mono tracking-wide">
-                Free · No credit card · Open source
+                Free · No signup to check · Open source
               </p>
             </motion.div>
 

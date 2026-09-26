@@ -5,3 +5,8 @@ dist
 .DS_Store
 *.log
 .vercel
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/

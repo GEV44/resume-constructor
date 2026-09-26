@@ -1,11 +1,17 @@
 # AI Resume Builder — Resume Constructor
 
-> Free AI resume constructor with ATS scoring for 36 job roles and 10 PDF templates.
+> Open-source AI resume builder. Deterministic ATS scoring for 36 job roles and any job description, AI rewrites that never invent facts, and ATS-readable PDF, Word and plain-text exports plus 10 designed templates.
 
 Site: https://resume-constructor-gev44.vercel.app
+Source: https://github.com/GEV44/resume-constructor
 
 ## Pages
 
-- [Home](https://resume-constructor-gev44.vercel.app/): Resume constructor landing page, features, sign up.
-- [Sign Up](https://resume-constructor-gev44.vercel.app/signup): Create a free account.
+- [Home](https://resume-constructor-gev44.vercel.app/): Product overview and features.
+- [Free ATS Checker](https://resume-constructor-gev44.vercel.app/ats-checker): Paste a resume and optional job description for an instant score, missing keywords and fixes. Runs in the browser; nothing is uploaded.
+- [Sign Up](https://resume-constructor-gev44.vercel.app/signup): Create a free account for AI review, rewrites and exports.
 - [Log In](https://resume-constructor-gev44.vercel.app/login): Sign in.
+
+## How scoring works
+
+Five weighted components (skills, experience, projects, education, quantified impact), with weights set per role category. When a job description is supplied, its keyword coverage is 30% of the overall score. The same input always produces the same score.

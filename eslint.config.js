@@ -24,6 +24,11 @@ export default tseslint.config(
     },
   },
   {
+    // Generated shadcn/ui primitives and the auth context export helpers alongside components by design.
+    files: ["src/components/ui/**/*.tsx", "src/contexts/**/*.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
     // Supabase Edge Functions run on Deno.
     files: ["supabase/functions/**/*.ts"],
     languageOptions: { globals: { ...globals.browser, Deno: "readonly" } },

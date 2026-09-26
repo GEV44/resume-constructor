@@ -1,8 +1,19 @@
 {
   "name": "resume-constructor",
+  "version": "2.0.0",
+  "description": "AI resume builder with deterministic ATS scoring, job-description matching, honest AI rewrites and ATS-readable exports.",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "author": "Gevorg Hovhannisyan (https://www.linkedin.com/in/gevorg-hovhannisyan-arm/)",
+  "license": "MIT",
+  "homepage": "https://resume-constructor-gev44.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GEV44/resume-constructor.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,7 +25,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ci": "npm run lint && npm run typecheck && npm test && npm run build"
+    "ci": "npm run lint && npm run typecheck && npm test && npm run build",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -75,6 +87,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
@@ -95,8 +108,5 @@
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
     "vitest": "^3.2.4"
-  },
-  "engines": {
-    "node": ">=20"
   }
 }
