@@ -34,6 +34,8 @@ React 18 · TypeScript 5 · Vite · Tailwind · Supabase · Vercel · Vitest · 
 |:---:|---|---|
 | 📄 | **Resume Parsing** | AI extracts contact details, experience, skills, projects and education. DOCX text is extracted on the server; file signatures are checked. |
 | 📊 | **Deterministic Scoring** | One transparent engine shared by the browser and the server. Weights differ by role category. Skill aliases (JS, k8s, Postgres…) are recognised. |
+| 🩺 | **ATS Readability Check** | The free checker flags missing contact details, non-standard headings, column layouts, decorative symbols and missing dates, each with a concrete fix. |
+| 🏷️ | **Recruiter-friendly file names** | Exports are named like `Ada_Lovelace_Data_Scientist_Resume.pdf`. |
 | 🆓 | **Free ATS Checker** | No signup. Upload a PDF or DOCX, or paste text, and get a score, missing keywords and fixes. Text is extracted and scored **entirely in your browser**. |
 | 🎯 | **Job-Description Match** | Paste a job posting to see which hard-skill keywords you cover and which you're missing. The match counts for 30% of the score. |
 | 🤖 | **Honest AI Optimization** | Rewrites are merged back into your original facts by position, so employers, titles, dates and degrees can't change. A new skill is kept only if your resume already shows evidence of it. |

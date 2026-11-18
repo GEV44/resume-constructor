@@ -8,6 +8,7 @@ import { scoreResume, type ScoreResult } from "@/lib/scoring";
 import { quickParse, SAMPLE_RESUME } from "@/lib/quick-parse";
 import { gradeColor } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
+import { checkReadability } from "@/lib/ats-readability";
 import { ExtractError, extractResumeText } from "@/lib/extract-text";
 
 const inputClass = "w-full glass rounded-xl px-4 py-3 bg-transparent text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all";
@@ -88,6 +89,7 @@ export default function AtsChecker() {
     setDragOver(false);
     loadFile(e.dataTransfer.files[0]);
   };
+  const readability = useMemo(() => (result ? checkReadability(resumeText) : []), [result, resumeText]);
   const role = useMemo(() => JOB_ROLES.find((r) => r.id === roleId), [roleId]);
 
   const check = () => {
@@ -247,6 +249,24 @@ export default function AtsChecker() {
                     <Chips items={result.job_match.missing} tone="bad" />
                   </div>
                 </>
+              )}
+            </div>
+
+            <div className="glass rounded-2xl p-5" aria-labelledby="readability-h">
+              <h2 id="readability-h" className="font-heading font-bold text-base mb-3 flex items-center gap-2">
+                {readability.length === 0 ? <CheckCircle2 className="w-4 h-4 text-accent" /> : <XCircle className="w-4 h-4 text-destructive" />} ATS readability check
+              </h2>
+              {readability.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No readability problems found: contact details, standard headings and dates are all machine-readable.</p>
+              ) : (
+                <ul className="space-y-3 text-sm">
+                  {readability.map((i) => (
+                    <li key={i.id}>
+                      <p className="font-medium"><span className="text-xs uppercase tracking-wide text-muted-foreground mr-2">{i.severity}</span>{i.message}</p>
+                      <p className="text-muted-foreground">Fix: {i.fix}</p>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
 

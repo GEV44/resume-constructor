@@ -22,6 +22,8 @@ import {
 import { downloadAtsPdf, downloadDocx, downloadText, hasNonLatinText, resumeToPlainText } from "@/lib/resume-export";
 import { computeGrade, scoreResume } from "@/lib/scoring";
 import { formatDate, formatRole, gradeColor } from "@/lib/format";
+import { exportFilename } from "@/lib/export-filename";
+import { getJobRoleById } from "@/lib/job-roles";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Item = Tables<"optimized_resumes">;
@@ -238,10 +240,8 @@ export default function Optimizations() {
     toast.success("Optimization deleted");
   };
 
-  const baseName = () => {
-    const name = (cleanData?.contact.name || "resume").trim().replace(/[^\w-]+/g, "-").replace(/-+/g, "-").toLowerCase();
-    return `${name}-${selected?.job_role ?? "resume"}`;
-  };
+  const fileName = (ext: string, suffix?: string) =>
+    exportFilename(cleanData?.contact.name, getJobRoleById(selected?.job_role ?? "")?.name ?? selected?.job_role, ext, suffix);
 
   const runExport = async (kind: string, fn: () => Promise<void> | void) => {
     if (!cleanData || exporting) return;
@@ -261,11 +261,11 @@ export default function Optimizations() {
     if (hasNonLatinText(cleanData!)) {
       toast.warning("Some characters aren't supported by the ATS PDF font — use the Word export for non-Latin text.");
     }
-    await downloadAtsPdf(cleanData!, `${baseName()}.pdf`);
+    await downloadAtsPdf(cleanData!, fileName("pdf"));
   });
-  const exportDesignPdf = () => runExport("design", () => downloadResumePDF(resumeToPlainText(cleanData!), cleanData, template, `${baseName()}-${template}.pdf`));
-  const exportDocx = () => runExport("docx", () => downloadDocx(cleanData!, `${baseName()}.docx`));
-  const exportTxt = () => runExport("txt", () => downloadText(cleanData!, `${baseName()}.txt`));
+  const exportDesignPdf = () => runExport("design", () => downloadResumePDF(resumeToPlainText(cleanData!), cleanData, template, fileName("pdf", template)));
+  const exportDocx = () => runExport("docx", () => downloadDocx(cleanData!, fileName("docx")));
+  const exportTxt = () => runExport("txt", () => downloadText(cleanData!, fileName("txt")));
   const copyText = async () => {
     if (!cleanData) return;
     await navigator.clipboard.writeText(resumeToPlainText(cleanData));
