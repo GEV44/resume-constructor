@@ -62,7 +62,7 @@ test.describe("signed-in app (mocked backend)", () => {
     await page.getByRole("tab", { name: "Export" }).click();
     page.once("dialog", (d) => d.accept()); // placeholder warning
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: /ATS PDF/ }).click()]);
-    expect(download.suggestedFilename()).toMatch(/alex-morgan-frontend-engineer\.pdf$/);
+    expect(download.suggestedFilename()).toMatch(/^Alex_Morgan_Frontend_Engineer_Resume\.pdf$/);
     const stream = await download.createReadStream();
     const chunks: Buffer[] = [];
     for await (const c of stream) chunks.push(c as Buffer);
